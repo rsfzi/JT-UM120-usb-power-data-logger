@@ -74,6 +74,11 @@ can manually change permissions of them with something similar to `sudo
 chown $USER /dev/bus/usb/001/030`, or better yet, install `udev` rules as
 described below.
 
+Create USB group:
+```shell
+sudo addgroup usbmeter
+```
+
 Install udev rules:
 
 ```shell
@@ -81,10 +86,8 @@ $ sudo install --mode=0644 --target-directory=/etc/udev/rules.d/ udev/90-usb-pow
 $ sudo udevadm trigger
 ```
 
-This should make `fnirsi_logger.py` work from any user account.
+This should make `fnirsi_logger.py` work for users of the usbmeter group.
 
-You can also modify `udev` rules, instead of allowing all users, allow
-only users in specific group (most appropiate would be group `dialout`).
 
 Accuracy / resolution
 ---------------------
