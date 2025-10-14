@@ -1,0 +1,24 @@
+version: 1
+disable_existing_loggers: no
+formatters:
+    console:
+        format: "%(asctime)s - %(levelname)s - %(message)s"
+    console_output:
+        format: "%(message)s"
+    file:
+        format: "%(asctime)s %(filename)s(%(lineno)d) %(levelname)-7s %(name)s: %(message)s"
+handlers:
+    console:
+        class: logging.StreamHandler
+        formatter: console
+        stream: ext://sys.stderr
+    file:
+        class: logging.FileHandler
+        mode: w
+        level: DEBUG
+        formatter: file
+        filename: /dev/null
+loggers:
+    root:
+        level: DEBUG
+        handlers: [console]

@@ -1,30 +1,24 @@
 #!/usr/bin/env python3
 
-import logging
+import logging.config
 import sys
 import os.path
 import time
 from typing import Optional, Callable
 import argparse
+from pathlib import Path
 
 import usb.core
 import usb.util
+from ruamel.yaml import YAML
 
 from device import DeviceModel, DEVICE_MAP
 from measurement import MeasurementData
 
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-
 class USBMeter:
-    def __init__(self, verbose: bool = False, crc: bool = False, alpha: float = 0.9):
-        self.verbose = verbose
+    def __init__(self, crc: bool = False, alpha: float = 0.9):
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.use_crc = crc
         self.alpha = alpha
         self.energy = 0.0
@@ -51,7 +45,7 @@ class USBMeter:
                 return crc.CrcCalculator(config, use_table=True).calculate_checksum
             return crc.Calculator(config, optimized=True).checksum
         except ImportError:
-            logger.warning("CRC package not found, disabling CRC checks")
+            self._logger.warning("CRC package not found, disabling CRC checks")
             return None
 
     def find_device(self) -> None:
@@ -60,15 +54,14 @@ class USBMeter:
             if device:
                 self.device = device
                 self.device_info = info
-                logger.debug(f"Found {info.model.name} device")
+                self._logger.debug(f"Found {info.model.name} device")
                 return
         raise RuntimeError("No supported USB meter found")
 
     def setup_device(self) -> None:
         self.device.reset()
         
-        if self.verbose:
-            self._print_device_info()
+        self._print_device_info()
 
         # Find and setup HID interface
         interface_num = self._find_hid_interface()
@@ -105,13 +98,13 @@ class USBMeter:
         )
 
     def _print_device_info(self) -> None:
-        logger.debug("Device configuration:")
+        self._logger.debug("Device configuration:")
         for cfg in self.device:
-            logger.debug(f"Config {cfg.bConfigurationValue}")
+            self._logger.debug(f"Config {cfg.bConfigurationValue}")
             for interface in cfg:
-                logger.debug(f"  Interface {interface.bInterfaceNumber}")
+                self._logger.debug(f"  Interface {interface.bInterfaceNumber}")
                 for ep in interface:
-                    logger.debug(f"    Endpoint {ep.bEndpointAddress:02x}")
+                    self._logger.debug(f"    Endpoint {ep.bEndpointAddress:02x}")
 
     def initialize_communication(self) -> None:
         init_sequence = [
@@ -189,9 +182,7 @@ class USBMeter:
         actual = data[-1]
         expected = self.crc_calculator(bytearray(data[1:-1]))
         if actual != expected:
-            logger.warning(
-                f"CRC mismatch: expected {expected:02x}, got {actual:02x}"
-            )
+            self._logger.warning(f"CRC mismatch: expected {expected:02x}, got {actual:02x}")
             return False
         return True
 
@@ -222,35 +213,57 @@ class USBMeter:
                     stop = True
 
             except KeyboardInterrupt:
-                logger.info("Keyboard interrupt received, stopping...")
+                self._logger.info("Keyboard interrupt received, stopping...")
                 stop = True
 
         self._drain_buffer()
 
     def _drain_buffer(self) -> None:
-        logger.debug("Draining USB buffer...")
+        self._logger.debug("Draining USB buffer...")
         try:
             while True:
                 data = self.ep_in.read(64, timeout=1000)
-                if data and self.verbose:
-                    logger.debug(f"Drained {len(data)} bytes")
+                if data:
+                    self._logger.debug(f"Drained {len(data)} bytes")
         except usb.core.USBTimeoutError:
-            logger.debug("Buffer drain complete")
+            self._logger.debug("Buffer drain complete")
 
 
 class Logger:
+    def __init__(self):
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+    def _start_logging(self, log_file_name, arg_log_level):
+        num_log_level = 50 - min(4, 2 + arg_log_level) * 10
+        log_level = logging.getLevelName(num_log_level)
+
+        script = Path(__file__).resolve()
+        folder = script.parent
+        config = folder / 'logging.yaml'
+
+        with open(config, "rt", encoding="UTF_8") as f:
+            yaml = YAML(typ="safe")
+            yaml_config = yaml.load(f)
+            yaml_config['handlers']['console']['level'] = log_level
+            if log_file_name:
+                yaml_config['handlers']['file']['filename'] = log_file_name
+                yaml_config['loggers']['root']['handlers'].append("file")
+            else:
+                del yaml_config['handlers']['file']
+            logging.config.dictConfig(yaml_config)
+
     def main(self):
         parser = argparse.ArgumentParser()
+        default = ' (default: %(default)s)'
+        parser.add_argument('-v', '--verbose', action='count', default=1, help="set the verbosity level" + default)
+        parser.add_argument('-l', '--logFile', help="logfile name")
         parser.add_argument("--crc", type=bool, default=False, help="Enable CRC checks")
-        parser.add_argument("--verbose", type=bool, default=False, help="Enable verbose logging")
         parser.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
         args = parser.parse_args()
 
-        if args.verbose:
-            logger.setLevel(logging.DEBUG)
+        self._start_logging(args.logFile, args.verbose)
 
-        meter = USBMeter(verbose=args.verbose, crc=args.crc, alpha=args.alpha)
-
+        meter = USBMeter(crc=args.crc, alpha=args.alpha)
         try:
             meter.find_device()
             meter.setup_device()
@@ -258,7 +271,7 @@ class Logger:
             meter.run()
             return 0
         except Exception as e:
-            logger.error(f"Error: {e}")
+            self._logger.error(f"Error: {e}")
         return 1
 
 
