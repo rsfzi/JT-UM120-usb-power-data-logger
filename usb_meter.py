@@ -6,11 +6,11 @@ from pathlib import Path
 import usb.core
 import usb.util
 
-from device import DeviceModel, DEVICE_MAP
+from device import Device, DeviceModel
 from measurement import MeasurementData
 
 class USBMeter:
-    def __init__(self, crc: bool = False, alpha: float = 0.9):
+    def __init__(self, device: Device, crc: bool = False, alpha: float = 0.9):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.use_crc = crc
         self.alpha = alpha
@@ -18,8 +18,7 @@ class USBMeter:
         self.capacity = 0.0
         self.temp_ema = None
         self.crc_calculator = self._setup_crc() if crc else None
-        self.device_info = None
-        self.device = None
+        self._device = device
         self.ep_in = None
         self.ep_out = None
 
@@ -41,26 +40,8 @@ class USBMeter:
             self._logger.warning("CRC package not found, disabling CRC checks")
             return None
 
-    def list_devices(self):
-        for (vid, pid), info in DEVICE_MAP.items():
-            device = usb.core.find(idVendor=vid, idProduct=pid)
-            if device:
-                self.device = device
-                self.device_info = info
-                self._logger.info(f"Found {info.model.name} device")
-
-    def find_device(self) -> None:
-        for (vid, pid), info in DEVICE_MAP.items():
-            device = usb.core.find(idVendor=vid, idProduct=pid)
-            if device:
-                self.device = device
-                self.device_info = info
-                self._logger.debug(f"Found {info.model.name} device")
-                return
-        raise RuntimeError("No supported USB meter found")
-
     def setup_device(self) -> None:
-        self.device.reset()
+        self._device.usb_device.reset()
 
         self._print_device_info()
 
@@ -69,8 +50,8 @@ class USBMeter:
         self._detach_kernel_driver(interface_num)
 
         # Configure device
-        self.device.set_configuration()
-        cfg = self.device.get_active_configuration()
+        self._device.usb_device.set_configuration()
+        cfg = self._device.usb_device.get_active_configuration()
         intf = cfg[(interface_num, 0)]
 
         # Get endpoints
@@ -78,16 +59,16 @@ class USBMeter:
         self.ep_in = self._find_endpoint(intf, usb.util.ENDPOINT_IN)
 
     def _find_hid_interface(self) -> int:
-        for cfg in self.device:
+        for cfg in self._device.usb_device:
             for interface in cfg:
                 if interface.bInterfaceClass == 0x03:  # HID class
                     return interface.bInterfaceNumber
         raise RuntimeError("No HID interface found")
 
     def _detach_kernel_driver(self, interface_num: int) -> None:
-        if self.device.is_kernel_driver_active(interface_num):
+        if self._device.usb_device.is_kernel_driver_active(interface_num):
             try:
-                self.device.detach_kernel_driver(interface_num)
+                self._device.usb_device.detach_kernel_driver(interface_num)
             except usb.core.USBError as e:
                 raise RuntimeError(f"Could not detach kernel driver: {e}")
 
@@ -100,7 +81,7 @@ class USBMeter:
 
     def _print_device_info(self) -> None:
         self._logger.debug("Device configuration:")
-        for cfg in self.device:
+        for cfg in self._device.usb_device:
             self._logger.debug(f"Config {cfg.bConfigurationValue}")
             for interface in cfg:
                 self._logger.debug(f"  Interface {interface.bInterfaceNumber}")
@@ -113,7 +94,7 @@ class USBMeter:
             (b"\xaa\x82", b"\x96"),
         ]
 
-        if self.device_info.model in (DeviceModel.FNB58, DeviceModel.FNB48S):
+        if self._device.device_info.model in (DeviceModel.FNB58, DeviceModel.FNB48S):
             init_sequence.append((b"\xaa\x82", b"\x96"))
         else:
             init_sequence.append((b"\xaa\x83", b"\x9e"))
@@ -188,7 +169,7 @@ class USBMeter:
         return True
 
     def run(self, data_logger) -> None:
-        next_refresh = time.time() + self.device_info.refresh_rate
+        next_refresh = time.time() + self._device.device_info.refresh_rate
         stop = False
         stop_file = Path("fnirsi_stop")
 
@@ -201,7 +182,7 @@ class USBMeter:
                     data_logger.log(measurement)
 
                 if time.time() >= next_refresh:
-                    next_refresh = time.time() + self.device_info.refresh_rate
+                    next_refresh = time.time() + self._device.device_info.refresh_rate
                     self.ep_out.write(b"\xaa\x83" + b"\x00" * 61 + b"\x9e")
 
                 if stop_file.exists():

@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 
+import usb.core
+
 
 class DeviceModel(Enum):
     FNB48 = auto()
@@ -17,7 +19,21 @@ class DeviceInfo:
     refresh_rate: float
 
 
-DEVICE_MAP = {
+class Device:
+    def __init__(self, device_info, usb_device):
+        self._device_info = device_info
+        self._usb_device = usb_device
+
+    @property
+    def device_info(self):
+        return self._device_info
+
+    @property
+    def usb_device(self):
+        return self._usb_device
+
+
+_DEVICE_MAP = {
     # FNB48
     # Bus 001 Device 020: ID 0483:003a STMicroelectronics FNB-48
     (0x0483, 0x003A): DeviceInfo(0x0483, 0x003A, DeviceModel.FNB48, 0.003),
@@ -30,3 +46,12 @@ DEVICE_MAP = {
     # Bus 001 Device 003: ID 2e3c:0049 FNIRSI USB Tester
     (0x2E3C, 0x0049): DeviceInfo(0x2E3C, 0x0049, DeviceModel.FNB48S, 1.0),
 }
+
+
+def get_devices():
+    devices = []
+    for (vid, pid), info in _DEVICE_MAP.items():
+        device = usb.core.find(idVendor=vid, idProduct=pid)
+        if device:
+            devices.append(Device(info, device))
+    return devices

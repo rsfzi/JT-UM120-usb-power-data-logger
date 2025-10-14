@@ -2,7 +2,7 @@
 
 import logging.config
 import sys
-from typing import Optional, Callable
+from typing import Optional
 from typing import Union, IO
 import argparse
 from pathlib import Path
@@ -12,6 +12,7 @@ from ruamel.yaml import YAML
 
 from data_logger import StreamDataLogger
 from usb_meter import USBMeter
+from device import get_devices
 
 @contextmanager
 def open_or_stdout(path: Optional[Union[str, Path, IO[str]]] = None,
@@ -62,12 +63,16 @@ class Logger:
             logging.config.dictConfig(yaml_config)
 
     def _device_list(self, args):
-        meter = USBMeter(crc=False, alpha=0)
-        meter.list_devices()
+        devices = get_devices()
+        for device in devices:
+            self._logger.info(f"Found device: {device.device_info.model.name}")
 
     def _log_data(self, args):
-        meter = USBMeter(crc=args.crc, alpha=args.alpha)
-        meter.find_device()
+        devices = get_devices()
+        if not devices:
+            raise RuntimeError("No supported USB meter found")
+        device = devices[0]
+        meter = USBMeter(device=device, crc=args.crc, alpha=args.alpha)
         meter.setup_device()
         meter.initialize_communication()
         with open_or_stdout(args.output) as out:
