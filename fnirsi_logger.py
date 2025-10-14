@@ -4,14 +4,15 @@ import logging
 import sys
 import os.path
 import time
-from dataclasses import dataclass
 from typing import Optional, Callable
+import argparse
 
 import usb.core
 import usb.util
-import argparse
 
 from device import DeviceModel, DEVICE_MAP
+from measurement import MeasurementData
+
 
 # Configure logging
 logging.basicConfig(
@@ -21,16 +22,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class MeasurementData:
-    timestamp: float
-    voltage: float
-    current: float
-    dp: float
-    dn: float
-    temperature: float
-    energy: float
-    capacity: float
 
 class USBMeter:
     def __init__(self, verbose: bool = False, crc: bool = False, alpha: float = 0.9):
