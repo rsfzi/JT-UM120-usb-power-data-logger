@@ -22,7 +22,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-
 class USBMeter:
     def __init__(self, verbose: bool = False, crc: bool = False, alpha: float = 0.9):
         self.verbose = verbose
@@ -238,26 +237,31 @@ class USBMeter:
         except usb.core.USBTimeoutError:
             logger.debug("Buffer drain complete")
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--crc", type=bool, default=False, help="Enable CRC checks")
-    parser.add_argument("--verbose", type=bool, default=False, help="Enable verbose logging")
-    parser.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
-    args = parser.parse_args()
 
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
+class Logger:
+    def main(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--crc", type=bool, default=False, help="Enable CRC checks")
+        parser.add_argument("--verbose", type=bool, default=False, help="Enable verbose logging")
+        parser.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
+        args = parser.parse_args()
 
-    meter = USBMeter(verbose=args.verbose, crc=args.crc, alpha=args.alpha)
-    
-    try:
-        meter.find_device()
-        meter.setup_device()
-        meter.initialize_communication()
-        meter.run()
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        sys.exit(1)
+        if args.verbose:
+            logger.setLevel(logging.DEBUG)
+
+        meter = USBMeter(verbose=args.verbose, crc=args.crc, alpha=args.alpha)
+
+        try:
+            meter.find_device()
+            meter.setup_device()
+            meter.initialize_communication()
+            meter.run()
+            return 0
+        except Exception as e:
+            logger.error(f"Error: {e}")
+        return 1
+
 
 if __name__ == "__main__":
-    main()
+    l = Logger()
+    sys.exit(l.main())
