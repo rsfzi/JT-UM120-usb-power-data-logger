@@ -1,5 +1,5 @@
 version: 1
-disable_existing_loggers: no
+disable_existing_loggers: False
 formatters:
     console:
         format: "%(asctime)s - %(levelname)s - %(message)s"
@@ -19,6 +19,6 @@ handlers:
         formatter: file
         filename: /dev/null
 loggers:
-    root:
+    "":
         level: DEBUG
         handlers: [console]
