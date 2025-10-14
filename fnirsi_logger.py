@@ -5,8 +5,10 @@ import sys
 import os.path
 import time
 from typing import Optional, Callable
+from typing import Union, IO
 import argparse
 from pathlib import Path
+from contextlib import contextmanager
 
 import usb.core
 import usb.util
@@ -186,8 +188,8 @@ class USBMeter:
             return False
         return True
 
-    def run(self) -> None:
-        print("timestamp voltage_V current_A dp_V dn_V temp_C_ema energy_Ws capacity_As")
+    def run(self, data_logger) -> None:
+        data_logger.info("timestamp voltage_V current_A dp_V dn_V temp_C_ema energy_Ws capacity_As")
         
         next_refresh = time.time() + self.device_info.refresh_rate
         stop = False
@@ -198,7 +200,7 @@ class USBMeter:
                 measurement = self.decode_packet(data, time.time())
                 
                 if measurement:
-                    print(
+                    data_logger.info(
                         f"{measurement.timestamp:.3f} {measurement.voltage:7.5f} "
                         f"{measurement.current:7.5f} {measurement.dp:5.3f} "
                         f"{measurement.dn:5.3f} {measurement.temperature:6.3f} "
@@ -229,12 +231,37 @@ class USBMeter:
             self._logger.debug("Buffer drain complete")
 
 
+@contextmanager
+def open_or_stdout(path: Optional[Union[str, Path, IO[str]]] = None,
+                   mode: str = "w",
+                   encoding: str = "utf-8"):
+    """
+    Context manager that yields a text file-like object.
+    - path can be None or '-' to mean stdout.
+    - path can be an already-open file-like object (has write()).
+    """
+    # If user passed an open file-like object, just use it
+    if hasattr(path, "write"):
+        yield path
+        return
+
+    # stdout convention
+    if path is None or path == "-":
+        yield sys.stdout
+        return
+
+    # Otherwise open a file path
+    p = Path(path)
+    with p.open(mode=mode, encoding=encoding) as f:
+        yield f
+
 class Logger:
     def __init__(self):
         self._logger = logging.getLogger(self.__class__.__name__)
 
-    def _start_logging(self, log_file_name, arg_log_level):
-        num_log_level = 50 - min(4, 2 + arg_log_level) * 10
+    def _start_logging(self, args):
+        log_file_name = args.logFile
+        num_log_level = 50 - min(4, 2 + args.verbose) * 10
         log_level = logging.getLevelName(num_log_level)
 
         script = Path(__file__).resolve()
@@ -259,16 +286,21 @@ class Logger:
         parser.add_argument('-l', '--logFile', help="logfile name")
         parser.add_argument("--crc", type=bool, default=False, help="Enable CRC checks")
         parser.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
+        parser.add_argument("-o", "--output", default="-", help="Output file path, or '-' for stdout (default).")
         args = parser.parse_args()
 
-        self._start_logging(args.logFile, args.verbose)
+        self._start_logging(args)
 
         meter = USBMeter(crc=args.crc, alpha=args.alpha)
         try:
             meter.find_device()
             meter.setup_device()
             meter.initialize_communication()
-            meter.run()
+            with open_or_stdout(args.output) as out:
+                data_logger = logging.getLogger("data")
+                dfh = logging.StreamHandler(out)
+                data_logger.handlers.append(dfh)
+                meter.run(data_logger)
             return 0
         except Exception as e:
             self._logger.error(f"Error: {e}")
