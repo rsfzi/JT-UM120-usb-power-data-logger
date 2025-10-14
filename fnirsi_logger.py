@@ -61,27 +61,44 @@ class Logger:
                 del yaml_config['handlers']['file']
             logging.config.dictConfig(yaml_config)
 
+    def _device_list(self, args):
+        meter = USBMeter(crc=False, alpha=0)
+        meter.list_devices()
+
+    def _log_data(self, args):
+        meter = USBMeter(crc=args.crc, alpha=args.alpha)
+        meter.find_device()
+        meter.setup_device()
+        meter.initialize_communication()
+        with open_or_stdout(args.output) as out:
+            data_logger = StreamDataLogger(out)
+            data_logger.init()
+            meter.run(data_logger)
+
     def main(self):
         parser = argparse.ArgumentParser()
         default = ' (default: %(default)s)'
         parser.add_argument('-v', '--verbose', action='count', default=1, help="set the verbosity level" + default)
         parser.add_argument('-l', '--logFile', help="logfile name")
-        parser.add_argument("--crc", action="store_true", help="Enable CRC checks")
-        parser.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
-        parser.add_argument("-o", "--output", default="-", help="Output file path, or '-' for stdout (default).")
+        subparsers = parser.add_subparsers(required=True, dest="subcommand", title='subcommands',
+                                           description='valid subcommands', help='sub-command help')
+        parser_log = subparsers.add_parser('log', help="log power data")
+        parser_log.add_argument("--crc", action="store_true", help="Enable CRC checks")
+        parser_log.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
+        parser_log.add_argument("-o", "--output", default="-", help="Output file path, or '-' for stdout (default).")
+        parser_log.set_defaults(func=self._log_data)
+
+        parser_device = subparsers.add_parser('device', help="device commands")
+        device_subparsers = parser_device.add_subparsers(required=True, dest="subcommand", title='subcommands',
+                                                         description='valid subcommands', help='sub-command help')
+        parser_device_list = device_subparsers.add_parser('list', help="list devices")
+        parser_device_list.set_defaults(func=self._device_list)
+
         args = parser.parse_args()
 
         self._start_logging(args)
-
-        meter = USBMeter(crc=args.crc, alpha=args.alpha)
         try:
-            meter.find_device()
-            meter.setup_device()
-            meter.initialize_communication()
-            with open_or_stdout(args.output) as out:
-                data_logger = StreamDataLogger(out)
-                data_logger.init()
-                meter.run(data_logger)
+            args.func(args)
             return 0
         except Exception as e:
             self._logger.error(f"Error: {e}")

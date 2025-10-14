@@ -41,6 +41,14 @@ class USBMeter:
             self._logger.warning("CRC package not found, disabling CRC checks")
             return None
 
+    def list_devices(self):
+        for (vid, pid), info in DEVICE_MAP.items():
+            device = usb.core.find(idVendor=vid, idProduct=pid)
+            if device:
+                self.device = device
+                self.device_info = info
+                self._logger.info(f"Found {info.model.name} device")
+
     def find_device(self) -> None:
         for (vid, pid), info in DEVICE_MAP.items():
             device = usb.core.find(idVendor=vid, idProduct=pid)
