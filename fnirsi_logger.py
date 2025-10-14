@@ -66,7 +66,7 @@ class Logger:
         default = ' (default: %(default)s)'
         parser.add_argument('-v', '--verbose', action='count', default=1, help="set the verbosity level" + default)
         parser.add_argument('-l', '--logFile', help="logfile name")
-        parser.add_argument("--crc", type=bool, default=False, help="Enable CRC checks")
+        parser.add_argument("--crc", action="store_true", help="Enable CRC checks")
         parser.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
         parser.add_argument("-o", "--output", default="-", help="Output file path, or '-' for stdout (default).")
         args = parser.parse_args()
