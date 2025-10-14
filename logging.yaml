@@ -7,8 +7,6 @@ formatters:
         format: "%(message)s"
     file:
         format: "%(asctime)s %(filename)s(%(lineno)d) %(levelname)-7s %(name)s: %(message)s"
-    data:
-        format: "%(message)s"
 handlers:
     console:
         class: logging.StreamHandler
@@ -24,7 +22,3 @@ loggers:
     root:
         level: DEBUG
         handlers: [console]
-    data:
-        level: DEBUG
-        handlers: []
-        propagate: false

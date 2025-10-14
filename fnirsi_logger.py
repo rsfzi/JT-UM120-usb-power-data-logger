@@ -16,7 +16,7 @@ from ruamel.yaml import YAML
 
 from device import DeviceModel, DEVICE_MAP
 from measurement import MeasurementData
-
+from data_logger import StreamDataLogger
 
 class USBMeter:
     def __init__(self, crc: bool = False, alpha: float = 0.9):
@@ -189,8 +189,6 @@ class USBMeter:
         return True
 
     def run(self, data_logger) -> None:
-        data_logger.info("timestamp voltage_V current_A dp_V dn_V temp_C_ema energy_Ws capacity_As")
-        
         next_refresh = time.time() + self.device_info.refresh_rate
         stop = False
 
@@ -200,12 +198,7 @@ class USBMeter:
                 measurement = self.decode_packet(data, time.time())
                 
                 if measurement:
-                    data_logger.info(
-                        f"{measurement.timestamp:.3f} {measurement.voltage:7.5f} "
-                        f"{measurement.current:7.5f} {measurement.dp:5.3f} "
-                        f"{measurement.dn:5.3f} {measurement.temperature:6.3f} "
-                        f"{measurement.energy:.6f} {measurement.capacity:.6f}"
-                    )
+                    data_logger.log(measurement)
 
                 if time.time() >= next_refresh:
                     next_refresh = time.time() + self.device_info.refresh_rate
@@ -297,9 +290,8 @@ class Logger:
             meter.setup_device()
             meter.initialize_communication()
             with open_or_stdout(args.output) as out:
-                data_logger = logging.getLogger("data")
-                dfh = logging.StreamHandler(out)
-                data_logger.handlers.append(dfh)
+                data_logger = StreamDataLogger(out)
+                data_logger.init()
                 meter.run(data_logger)
             return 0
         except Exception as e:
@@ -308,5 +300,5 @@ class Logger:
 
 
 if __name__ == "__main__":
-    l = Logger()
-    sys.exit(l.main())
+    logger = Logger()
+    sys.exit(logger.main())
