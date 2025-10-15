@@ -108,6 +108,10 @@ class Logger:
             data_logger = StreamDataLogger(out)
             meter.run(data_logger)
 
+    def _server(self, args):
+        from server import server_main
+        server_main(args)
+
     def main(self):
         parser = argparse.ArgumentParser(prog="um120_logger")
         default = ' (default: %(default)s)'
@@ -134,6 +138,9 @@ class Logger:
         parser_device_list.set_defaults(func=self._device_list)
         parser_device_show = device_subparsers.add_parser('show', parents=[id_parser], help="show device details")
         parser_device_show.set_defaults(func=self._device_show)
+
+        parser_srv = subparsers.add_parser('server', help="starts REST server")
+        parser_srv.set_defaults(func=self._server)
 
         args = parser.parse_args()
 
