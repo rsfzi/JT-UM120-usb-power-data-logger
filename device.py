@@ -37,6 +37,15 @@ class Device:
         sn = usb.util.get_string(self._usb_device, self._usb_device.iSerialNumber)
         return sn
 
+    @property
+    def product_name(self):
+        sn = usb.util.get_string(self._usb_device, self._usb_device.iProduct)
+        return sn
+
+    @property
+    def manufacturer_name(self):
+        sn = usb.util.get_string(self._usb_device, self._usb_device.iManufacturer)
+        return sn
 
 _DEVICE_MAP = {
     # FNB48

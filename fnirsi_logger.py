@@ -58,7 +58,10 @@ class Logger:
         devices = get_devices()
         self._logger.info("Available devices:")
         for device in devices:
-            self._logger.info(f"- {device.device_info.vid:x}:{device.device_info.pid:x} type: {device.device_info.model.name} serial number: {device.serial_number}")
+            sn = device.serial_number
+            product = device.product_name
+            manufacturer = device.manufacturer_name
+            self._logger.info(f"- {device.device_info.vid:x}:{device.device_info.pid:x} {manufacturer} {product} (type: {device.device_info.model.name} SN: {sn})")
 
     def _get_id_description(self, args):
         if args.id:
