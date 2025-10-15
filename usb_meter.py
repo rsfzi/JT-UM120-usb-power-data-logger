@@ -83,7 +83,7 @@ class USBMeter:
         )
 
     def _print_device_info(self) -> None:
-        self._logger.debug("Device configuration:")
+        self._logger.debug(f"Device configuration {self._device.device_info.vid:x}:{self._device.device_info.pid:x}:")
         for cfg in self._device.usb_device:
             self._logger.debug(f"Config {cfg.bConfigurationValue}")
             for interface in cfg:
