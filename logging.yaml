@@ -10,7 +10,7 @@ formatters:
 handlers:
     console:
         class: logging.StreamHandler
-        formatter: console
+        formatter: console_output
         stream: ext://sys.stderr
     file:
         class: logging.FileHandler
