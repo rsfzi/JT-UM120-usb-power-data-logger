@@ -96,7 +96,7 @@ class Logger:
 
     def _log_data(self, args):
         device = self._find_device(args)
-        meter = USBMeter(device=device, crc=args.crc, alpha=args.alpha)
+        meter = USBMeter(device=device, crc=not args.no_crc, alpha=args.alpha)
         meter.setup_device()
         meter.initialize_communication()
         with open_or_stdout(args.output) as out:
@@ -117,7 +117,7 @@ class Logger:
         id_group.add_argument('--serial_number', type=lambda x: int(x, 16), help="Device serial number")
 
         parser_log = subparsers.add_parser('log', parents=[id_parser], help="log power data")
-        parser_log.add_argument("--crc", action="store_true", help="Enable CRC checks")
+        parser_log.add_argument("--no_crc", action="store_true", help="Disable CRC checks")
         parser_log.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
         parser_log.add_argument("-o", "--output", default="-", help="Output file, or '-' for stdout (default).")
         parser_log.set_defaults(func=self._log_data)
