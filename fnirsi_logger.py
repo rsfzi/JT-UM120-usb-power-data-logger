@@ -12,7 +12,8 @@ from ruamel.yaml import YAML
 
 from data_logger import StreamDataLogger
 from usb_meter import USBMeter
-from device import get_devices
+from device import get_devices, devices_by_vid_pid, devices_by_serial_number
+
 
 @contextmanager
 def open_or_stdout(path: Optional[Union[str, Path, IO[str]]] = None,
@@ -37,6 +38,7 @@ def open_or_stdout(path: Optional[Union[str, Path, IO[str]]] = None,
     p = Path(path)
     with p.open(mode=mode, encoding=encoding) as f:
         yield f
+
 
 class Logger:
     def __init__(self):
@@ -64,14 +66,47 @@ class Logger:
 
     def _device_list(self, args):
         devices = get_devices()
+        self._logger.info("Available devices:")
         for device in devices:
-            self._logger.info(f"Found device: {device.device_info.model.name}")
+            self._logger.info(f"- {device.device_info.vid:x}:{device.device_info.pid:x} type: {device.device_info.model.name} serial number: {device.serial_number}")
+
+    def _get_id_description(self, args):
+        if args.id:
+            return "vid:pid = %s" % args.id
+        if args.serial_number:
+            return "serial number = %X" % args.serial_number
+        raise RuntimeError("unknown id kind")
+
+    def _split_id(self, id):
+        tokens = id.split(":")
+        return int(tokens[0], 16), int(tokens[1], 16)
+
+    def _devices_by_id(self, args):
+        if args.id:
+            vid, pid = self._split_id(args.id)
+            return devices_by_vid_pid(vid, pid)
+        if args.serial_number:
+            return devices_by_serial_number(args.serial_number)
+        return None
+
+    def _find_device(self, args):
+        devices = self._devices_by_id(args)
+        device = next(devices, None)
+        if not device:
+            raise RuntimeError("No devices found with: %s" % self._get_id_description(args))
+        if next(devices, None):
+            raise RuntimeError("Too many devices found with: %s" % self._get_id_description(args))
+        return device
+
+    def _device_show(self, args):
+        device = self._find_device(args)
+        self._logger.info(f"Vendor ID:     {device.device_info.vid:x}")
+        self._logger.info(f"Product ID:    {device.device_info.pid:x}")
+        self._logger.info(f"Type:          {device.device_info.model.name}")
+        self._logger.info(f"Serial number: {device.serial_number}")
 
     def _log_data(self, args):
-        devices = get_devices()
-        if not devices:
-            raise RuntimeError("No supported USB meter found")
-        device = devices[0]
+        device = self._find_device(args)
         meter = USBMeter(device=device, crc=args.crc, alpha=args.alpha)
         meter.setup_device()
         meter.initialize_communication()
@@ -81,13 +116,19 @@ class Logger:
             meter.run(data_logger)
 
     def main(self):
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(prog="um120_logger")
         default = ' (default: %(default)s)'
         parser.add_argument('-v', '--verbose', action='count', default=1, help="set the verbosity level" + default)
         parser.add_argument('-l', '--logFile', help="logfile name")
         subparsers = parser.add_subparsers(required=True, dest="subcommand", title='subcommands',
                                            description='valid subcommands', help='sub-command help')
-        parser_log = subparsers.add_parser('log', help="log power data")
+
+        id_parser = argparse.ArgumentParser(add_help=False)
+        id_group = id_parser.add_mutually_exclusive_group(required=True)
+        id_group.add_argument('--id', help="Device vendorid:productid")
+        id_group.add_argument('--serial_number', type=lambda x: int(x, 16), help="Device serial number")
+
+        parser_log = subparsers.add_parser('log', parents=[id_parser], help="log power data")
         parser_log.add_argument("--crc", action="store_true", help="Enable CRC checks")
         parser_log.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
         parser_log.add_argument("-o", "--output", default="-", help="Output file path, or '-' for stdout (default).")
@@ -98,6 +139,8 @@ class Logger:
                                                          description='valid subcommands', help='sub-command help')
         parser_device_list = device_subparsers.add_parser('list', help="list devices")
         parser_device_list.set_defaults(func=self._device_list)
+        parser_device_show = device_subparsers.add_parser('show', parents=[id_parser], help="show device details")
+        parser_device_show.set_defaults(func=self._device_show)
 
         args = parser.parse_args()
 
@@ -106,7 +149,7 @@ class Logger:
             args.func(args)
             return 0
         except Exception as e:
-            self._logger.error(f"Error: {e}")
+            self._logger.exception(f"Error: {e}")
         return 1
 
 

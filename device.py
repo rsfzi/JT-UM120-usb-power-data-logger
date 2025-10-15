@@ -32,6 +32,11 @@ class Device:
     def usb_device(self):
         return self._usb_device
 
+    @property
+    def serial_number(self):
+        sn = usb.util.get_string(self._usb_device, self._usb_device.iSerialNumber)
+        return sn
+
 
 _DEVICE_MAP = {
     # FNB48
@@ -49,9 +54,39 @@ _DEVICE_MAP = {
 
 
 def get_devices():
-    devices = []
     for (vid, pid), info in _DEVICE_MAP.items():
-        device = usb.core.find(idVendor=vid, idProduct=pid)
-        if device:
-            devices.append(Device(info, device))
-    return devices
+        devices = usb.core.find(find_all=True, idVendor=vid, idProduct=pid)
+        for device in devices:
+            yield Device(info, device)
+
+
+def _find_device_info(usb_device) -> DeviceInfo:
+    for (vid, pid), info in _DEVICE_MAP.items():
+        if usb_device.idVendor == vid:
+            if usb_device.idProduct == pid:
+                return info
+
+def devices_by_vid_pid(vid, pid):
+    for usb_device in usb.core.find(find_all=True, idVendor=vid, idProduct=pid):
+        device_info = _find_device_info(usb_device)
+        if device_info:
+            yield Device(device_info, usb_device)
+
+
+def devices_by_serial_number(serial_number):
+    def has_serial_number(dev):
+        try:
+            sn_str = usb.util.get_string(dev, dev.iSerialNumber)
+            if sn_str:
+                sn = int(sn_str, 16)
+                if serial_number == sn:
+                    return True
+        except ValueError:
+            pass
+        return False
+
+    for usb_device in usb.core.find(find_all=True, custom_match=has_serial_number):
+        device_info = _find_device_info(usb_device)
+        if device_info:
+            yield Device(device_info, usb_device)
+
