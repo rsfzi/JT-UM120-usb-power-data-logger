@@ -170,31 +170,34 @@ class USBMeter:
             return False
         return True
 
+    def _should_stop(self):
+        stop_file = Path("fnirsi_stop")
+        if stop_file.exists():
+            self._logger.info("Stop file found -> stopping...")
+            return True
+        return False
+
+    def _do_log(self, data_logger):
+        next_refresh = time.time() + self._device.device_info.refresh_rate
+        while True:
+            data = self.ep_in.read(64, timeout=5000)
+            measurement = self.decode_packet(data, time.time())
+            if measurement:
+                data_logger.log(measurement)
+
+            if time.time() >= next_refresh:
+                next_refresh = time.time() + self._device.device_info.refresh_rate
+                self.ep_out.write(b"\xaa\x83" + b"\x00" * 61 + b"\x9e")
+
+            if self._should_stop():
+                break
+
     def run(self, data_logger) -> None:
         data_logger.init()
-
-        next_refresh = time.time() + self._device.device_info.refresh_rate
-        stop = False
-        stop_file = Path("fnirsi_stop")
-
-        while not stop:
-            try:
-                data = self.ep_in.read(64, timeout=5000)
-                measurement = self.decode_packet(data, time.time())
-
-                if measurement:
-                    data_logger.log(measurement)
-
-                if time.time() >= next_refresh:
-                    next_refresh = time.time() + self._device.device_info.refresh_rate
-                    self.ep_out.write(b"\xaa\x83" + b"\x00" * 61 + b"\x9e")
-
-                if stop_file.exists():
-                    stop = True
-
-            except KeyboardInterrupt:
-                self._logger.info("Keyboard interrupt received, stopping...")
-                stop = True
+        try:
+            self._do_log(data_logger)
+        except KeyboardInterrupt:
+            self._logger.info("Keyboard interrupt received -> stopping...")
 
         self._drain_buffer()
 
