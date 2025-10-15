@@ -12,6 +12,7 @@ from ruamel.yaml import YAML
 from data_logger import StreamDataLogger
 from usb_meter import USBMeter
 from device import get_devices, devices_by_vid_pid, devices_by_serial_number
+from stop_provider import FileStopProvider
 
 
 @contextmanager
@@ -96,7 +97,8 @@ class Logger:
 
     def _log_data(self, args):
         device = self._find_device(args)
-        meter = USBMeter(device=device, crc=not args.no_crc, alpha=args.alpha)
+        stop_provider = FileStopProvider()
+        meter = USBMeter(device=device, stop_provider=stop_provider, crc=not args.no_crc, alpha=args.alpha)
         meter.setup_device()
         meter.initialize_communication()
         with open_or_stdout(args.output) as out:

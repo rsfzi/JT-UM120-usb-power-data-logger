@@ -1,17 +1,17 @@
 import logging
 import time
 from typing import Optional, Callable
-from pathlib import Path
 
 import usb.core
 import usb.util
 
 from device import Device, DeviceModel
 from measurement import MeasurementData
+from stop_provider import StopProvider
 
 
 class USBMeter:
-    def __init__(self, device: Device, crc: bool = False, alpha: float = 0.9):
+    def __init__(self, device: Device, stop_provider: StopProvider, crc: bool = False, alpha: float = 0.9):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.use_crc = crc
         self.alpha = alpha
@@ -20,6 +20,7 @@ class USBMeter:
         self.temp_ema = None
         self.crc_calculator = self._setup_crc() if crc else None
         self._device = device
+        self._stop_provider = stop_provider
         self.ep_in = None
         self.ep_out = None
 
@@ -172,13 +173,6 @@ class USBMeter:
             return False
         return True
 
-    def _should_stop(self):
-        stop_file = Path("fnirsi_stop")
-        if stop_file.exists():
-            self._logger.info("Stop file found -> stopping...")
-            return True
-        return False
-
     def _do_log(self, data_logger):
         next_refresh = time.time() + self._device.device_info.refresh_rate
         while True:
@@ -191,7 +185,7 @@ class USBMeter:
                 next_refresh = time.time() + self._device.device_info.refresh_rate
                 self.ep_out.write(b"\xaa\x83" + b"\x00" * 61 + b"\x9e")
 
-            if self._should_stop():
+            if self._stop_provider.should_stop():
                 break
 
     def run(self, data_logger) -> None:
