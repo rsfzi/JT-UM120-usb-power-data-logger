@@ -101,7 +101,6 @@ class Logger:
         meter.initialize_communication()
         with open_or_stdout(args.output) as out:
             data_logger = StreamDataLogger(out)
-            data_logger.init()
             meter.run(data_logger)
 
     def main(self):

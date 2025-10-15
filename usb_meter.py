@@ -171,6 +171,8 @@ class USBMeter:
         return True
 
     def run(self, data_logger) -> None:
+        data_logger.init()
+
         next_refresh = time.time() + self._device.device_info.refresh_rate
         stop = False
         stop_file = Path("fnirsi_stop")
