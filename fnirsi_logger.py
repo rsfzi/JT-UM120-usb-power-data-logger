@@ -2,8 +2,7 @@
 
 import logging.config
 import sys
-from typing import Optional
-from typing import Union, IO
+from typing import Optional, Union
 import argparse
 from pathlib import Path
 from contextlib import contextmanager
@@ -16,19 +15,9 @@ from device import get_devices, devices_by_vid_pid, devices_by_serial_number
 
 
 @contextmanager
-def open_or_stdout(path: Optional[Union[str, Path, IO[str]]] = None,
+def open_or_stdout(path: Optional[Union[str, Path]] = None,
                    mode: str = "w",
                    encoding: str = "utf-8"):
-    """
-    Context manager that yields a text file-like object.
-    - path can be None or '-' to mean stdout.
-    - path can be an already-open file-like object (has write()).
-    """
-    # If user passed an open file-like object, just use it
-    if hasattr(path, "write"):
-        yield path
-        return
-
     # stdout convention
     if path is None or path == "-":
         yield sys.stdout
@@ -131,7 +120,7 @@ class Logger:
         parser_log = subparsers.add_parser('log', parents=[id_parser], help="log power data")
         parser_log.add_argument("--crc", action="store_true", help="Enable CRC checks")
         parser_log.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
-        parser_log.add_argument("-o", "--output", default="-", help="Output file path, or '-' for stdout (default).")
+        parser_log.add_argument("-o", "--output", default="-", help="Output file, or '-' for stdout (default).")
         parser_log.set_defaults(func=self._log_data)
 
         parser_device = subparsers.add_parser('device', help="device commands")
