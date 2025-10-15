@@ -9,6 +9,7 @@ import usb.util
 from device import Device, DeviceModel
 from measurement import MeasurementData
 
+
 class USBMeter:
     def __init__(self, device: Device, crc: bool = False, alpha: float = 0.9):
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -152,6 +153,7 @@ class USBMeter:
             self.temp_ema = temp_C * (1.0 - self.alpha) + self.temp_ema * self.alpha
 
         return MeasurementData(
+            device=self._device,
             timestamp=timestamp,
             voltage=voltage,
             current=current,

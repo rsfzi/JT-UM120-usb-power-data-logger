@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 
+from device import Device
+
 
 @dataclass
 class MeasurementData:
+    device: Device
     timestamp: float
     voltage: float
     current: float
