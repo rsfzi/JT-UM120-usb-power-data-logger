@@ -47,10 +47,10 @@ class USBMeter:
 
         # Find and setup HID interface
         interface_num = self._find_hid_interface()
-        self._detach_kernel_driver(interface_num)
+        if self._detach_kernel_driver(interface_num):
+            self._device.usb_device.set_configuration()
 
         # Configure device
-        self._device.usb_device.set_configuration()
         cfg = self._device.usb_device.get_active_configuration()
         intf = cfg[(interface_num, 0)]
 
@@ -65,12 +65,14 @@ class USBMeter:
                     return interface.bInterfaceNumber
         raise RuntimeError("No HID interface found")
 
-    def _detach_kernel_driver(self, interface_num: int) -> None:
+    def _detach_kernel_driver(self, interface_num: int) -> bool:
         if self._device.usb_device.is_kernel_driver_active(interface_num):
             try:
                 self._device.usb_device.detach_kernel_driver(interface_num)
             except usb.core.USBError as e:
                 raise RuntimeError(f"Could not detach kernel driver: {e}")
+            return True
+        return False
 
     def _find_endpoint(self, interface, direction) -> usb.core.Endpoint:
         return usb.util.find_descriptor(
