@@ -1,4 +1,4 @@
-from measurement import MeasurementData
+from logger.measurement import MeasurementData
 
 
 class DataLogger:

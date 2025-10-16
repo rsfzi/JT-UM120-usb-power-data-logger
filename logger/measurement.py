@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from device import Device
+from logger.device import Device
 
 
 @dataclass
