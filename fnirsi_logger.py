@@ -10,7 +10,7 @@ from ruamel.yaml import YAML
 from logger.usb_meter import USBMeter
 from logger.device import get_devices, devices_by_vid_pid, devices_by_serial_number
 from file_stop_provider import FileStopProvider
-from file_data_logger import StreamDataLogger
+from file_data_logger import OutputType
 
 
 class Logger:
@@ -87,7 +87,8 @@ class Logger:
         meter = USBMeter(device=device, stop_provider=stop_provider, crc=not args.no_crc, alpha=args.alpha)
         meter.setup_device()
         meter.initialize_communication()
-        with StreamDataLogger(args.output) as data_logger:
+        output_type = OutputType[args.type.upper()]
+        with output_type.clazz(args.output) as data_logger:
             meter.run(data_logger)
 
     def main(self):
@@ -107,6 +108,9 @@ class Logger:
         parser_log.add_argument("--no_crc", action="store_true", help="Disable CRC checks")
         parser_log.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
         parser_log.add_argument("-o", "--output", default="-", help="Output file, or '-' for stdout (default).")
+        parser_log.add_argument('-t', '--type',
+                            choices=[_type.type.lower() for _type in OutputType],
+                            default=OutputType.CSV.name.lower(), help="select output file type" + default)
         parser_log.set_defaults(func=self._log_data)
 
         parser_device = subparsers.add_parser('device', help="device commands")
