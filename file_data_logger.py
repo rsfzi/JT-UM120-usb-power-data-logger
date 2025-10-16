@@ -17,14 +17,14 @@ class StreamDataLogger(DataLogger):
             self._stream = p.open(mode="w", encoding="utf-8")
 
     def __enter__(self):
-        #self.init()
+        self._init()
         return self
 
     def __exit__(self, type, value, traceback):
         if self._needs_close:
             self._stream.close()
 
-    def init(self) -> None:
+    def _init(self) -> None:
         self._stream.write("timestamp voltage_V current_A dp_V dn_V temp_C_ema energy_Ws capacity_As\n")
 
     def log(self, data: MeasurementData) -> None:

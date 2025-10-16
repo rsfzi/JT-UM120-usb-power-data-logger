@@ -190,7 +190,6 @@ class USBMeter:
 
     def run(self, data_logger) -> None:
         self._logger.debug("log with CRC: %s" % self.use_crc)
-        data_logger.init()
         try:
             self._do_log(data_logger)
         except KeyboardInterrupt:
