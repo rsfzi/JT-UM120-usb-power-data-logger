@@ -11,7 +11,7 @@ from ruamel.yaml import YAML
 
 from logger.usb_meter import USBMeter
 from logger.device import get_devices, devices_by_vid_pid, devices_by_serial_number
-from logger.stop_provider import FileStopProvider
+from file_stop_provider import FileStopProvider
 from stream_data_logger import StreamDataLogger
 
 
