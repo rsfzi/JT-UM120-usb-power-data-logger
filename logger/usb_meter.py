@@ -5,9 +5,9 @@ from typing import Optional, Callable
 import usb.core
 import usb.util
 
-from device import Device, DeviceModel
-from measurement import MeasurementData
-from stop_provider import StopProvider
+from logger.device import Device, DeviceModel
+from logger.measurement import MeasurementData
+from logger.stop_provider import StopProvider
 
 
 class USBMeter:
