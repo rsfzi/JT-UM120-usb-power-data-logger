@@ -2,10 +2,8 @@
 
 import logging.config
 import sys
-from typing import Optional, Union
 import argparse
 from pathlib import Path
-from contextlib import contextmanager
 
 from ruamel.yaml import YAML
 
@@ -13,21 +11,6 @@ from logger.usb_meter import USBMeter
 from logger.device import get_devices, devices_by_vid_pid, devices_by_serial_number
 from file_stop_provider import FileStopProvider
 from file_data_logger import StreamDataLogger
-
-
-@contextmanager
-def open_or_stdout(path: Optional[Union[str, Path]] = None,
-                   mode: str = "w",
-                   encoding: str = "utf-8"):
-    # stdout convention
-    if path is None or path == "-":
-        yield sys.stdout
-        return
-
-    # Otherwise open a file path
-    p = Path(path)
-    with p.open(mode=mode, encoding=encoding) as f:
-        yield f
 
 
 class Logger:
@@ -104,8 +87,7 @@ class Logger:
         meter = USBMeter(device=device, stop_provider=stop_provider, crc=not args.no_crc, alpha=args.alpha)
         meter.setup_device()
         meter.initialize_communication()
-        with open_or_stdout(args.output) as out:
-            data_logger = StreamDataLogger(out)
+        with StreamDataLogger(args.output) as data_logger:
             meter.run(data_logger)
 
     def main(self):
