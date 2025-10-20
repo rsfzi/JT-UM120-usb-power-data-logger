@@ -1,10 +1,9 @@
 import sys
 from pathlib import Path
-from typing import Union
+from typing import Union, Type, List
 import csv
 from dataclasses import dataclass
 from enum import Enum
-from typing import Type
 
 from logger.data_logger import DataLogger
 from logger.measurement import MeasurementData
@@ -31,7 +30,7 @@ class StreamDataLogger(DataLogger):
     def _init(self) -> None:
         self._stream.write("timestamp voltage_V current_A dp_V dn_V temp_C_ema energy_Ws capacity_As\n")
 
-    def log(self, data: MeasurementData) -> None:
+    def _log_measurement(self, data: MeasurementData) -> None:
         self._stream.write(
             f"{data.timestamp.isoformat(timespec="milliseconds")} {data.voltage:7.5f} "
             f"{data.current:7.5f} {data.dp:5.3f} "
@@ -39,6 +38,10 @@ class StreamDataLogger(DataLogger):
             f"{data.energy:.6f} {data.capacity:.6f}"
             "\n"
         )
+
+    def log(self, data: List[MeasurementData]) -> None:
+        for measurement in data:
+            self._log_measurement(measurement)
 
 
 class CSVDataLogger(StreamDataLogger):
@@ -51,7 +54,7 @@ class CSVDataLogger(StreamDataLogger):
     def _init(self) -> None:
         self._writer.writeheader()
 
-    def log(self, data: MeasurementData) -> None:
+    def _log_measurement(self, data: MeasurementData) -> None:
         entry = {
             "timestamp": f"{data.timestamp.isoformat(timespec="milliseconds")}",
             "voltage_V": f"{data.voltage:7.5f}",

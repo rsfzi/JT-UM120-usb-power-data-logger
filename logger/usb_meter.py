@@ -109,7 +109,7 @@ class USBMeter:
             self.ep_out.write(prefix + b"\x00" * 61 + suffix)
             time.sleep(0.01)
 
-    def decode_packet(self, data: bytes, timestamp: datetime.datetime) -> Optional[List[MeasurementData]]:
+    def decode_packet(self, data: bytes, timestamp: datetime.datetime) -> List[MeasurementData]:
         # Data is 64 bytes (64 bytes of HID data minus vendor constant 0xaa)
         # First byte is HID vendor constant 0xaa
         # Second byte is payload type:
@@ -121,11 +121,11 @@ class USBMeter:
         #   1 byte (last) is a 8-bit CRC checksum
 
         if data[1] != 0x04:  # Not a data packet
-            return None
+            return []
 
         if self.use_crc and self.crc_calculator:
             if not self._verify_crc(data):
-                return None
+                return []
 
         measurements = []
         sample_delta = datetime.timedelta(milliseconds=10)
@@ -183,9 +183,7 @@ class USBMeter:
             data = self.ep_in.read(64, timeout=5000)
             now = datetime.datetime.now(datetime.timezone.utc)
             measurements = self.decode_packet(data, now)
-            if measurements:
-                measurement = measurements[-1]  # most recent measurement
-                data_logger.log(measurement)
+            data_logger.log(measurements)
 
             if datetime.datetime.now() >= next_refresh:
                 next_refresh = datetime.datetime.now() + self._device.device_info.refresh_rate
