@@ -129,7 +129,6 @@ class USBMeter:
 
         measurements = []
         sample_delta = datetime.timedelta(milliseconds=10)
-        #base_time = timestamp - 0.04  # 4 samples, 10ms each
         base_time = timestamp - 4 * sample_delta    # 4 samples, 10ms each
 
         for i in range(4):
@@ -179,7 +178,7 @@ class USBMeter:
         return True
 
     def _do_log(self, data_logger):
-        next_refresh = time.time() + self._device.device_info.refresh_rate
+        next_refresh = datetime.datetime.now() + self._device.device_info.refresh_rate
         while True:
             data = self.ep_in.read(64, timeout=5000)
             now = datetime.datetime.now(datetime.timezone.utc)
@@ -187,8 +186,8 @@ class USBMeter:
             if measurement:
                 data_logger.log(measurement)
 
-            if time.time() >= next_refresh:
-                next_refresh = time.time() + self._device.device_info.refresh_rate
+            if datetime.datetime.now() >= next_refresh:
+                next_refresh = datetime.datetime.now() + self._device.device_info.refresh_rate
                 self.ep_out.write(b"\xaa\x83" + b"\x00" * 61 + b"\x9e")
 
             if self._stop_provider.should_stop():

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, auto
+import datetime
 
 import usb.core
 
@@ -16,7 +17,7 @@ class DeviceInfo:
     vid: int
     pid: int
     model: DeviceModel
-    refresh_rate: float
+    refresh_rate: datetime.timedelta
 
 
 class Device:
@@ -50,15 +51,15 @@ class Device:
 _DEVICE_MAP = {
     # FNB48
     # Bus 001 Device 020: ID 0483:003a STMicroelectronics FNB-48
-    (0x0483, 0x003A): DeviceInfo(0x0483, 0x003A, DeviceModel.FNB48, 0.003),
+    (0x0483, 0x003A): DeviceInfo(0x0483, 0x003A, DeviceModel.FNB48, datetime.timedelta(milliseconds=3)),
     # C1
     # Bus 001 Device 029: ID 0483:003b STMicroelectronics USB Tester
-    (0x0483, 0x003B): DeviceInfo(0x0483, 0x003B, DeviceModel.C1, 0.003),
+    (0x0483, 0x003B): DeviceInfo(0x0483, 0x003B, DeviceModel.C1, datetime.timedelta(milliseconds=3)),
     # FNB58
-    (0x2E3C, 0x5558): DeviceInfo(0x2E3C, 0x5558, DeviceModel.FNB58, 1.0),
+    (0x2E3C, 0x5558): DeviceInfo(0x2E3C, 0x5558, DeviceModel.FNB58, datetime.timedelta(seconds=1)),
     # FNB48S
     # Bus 001 Device 003: ID 2e3c:0049 FNIRSI USB Tester
-    (0x2E3C, 0x0049): DeviceInfo(0x2E3C, 0x0049, DeviceModel.FNB48S, 1.0),
+    (0x2E3C, 0x0049): DeviceInfo(0x2E3C, 0x0049, DeviceModel.FNB48S, datetime.timedelta(seconds=1)),
 }
 
 
