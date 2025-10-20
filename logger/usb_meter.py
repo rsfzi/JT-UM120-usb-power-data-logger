@@ -183,7 +183,8 @@ class USBMeter:
             data = self.ep_in.read(64, timeout=5000)
             now = datetime.datetime.now(datetime.timezone.utc)
             measurements = self.decode_packet(data, now)
-            data_logger.log(measurements)
+            if measurements:
+                data_logger.log(measurements)
 
             if datetime.datetime.now() >= next_refresh:
                 next_refresh = datetime.datetime.now() + self._device.device_info.refresh_rate
