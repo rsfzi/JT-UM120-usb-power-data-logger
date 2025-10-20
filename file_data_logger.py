@@ -10,7 +10,7 @@ from logger.measurement import MeasurementData
 
 
 class StreamDataLogger(DataLogger):
-    def __init__(self, path: Union[str, Path]):
+    def __init__(self, path: Union[str, Path], latest_only: bool):
         if path is None or path == "-":
             self._needs_close = False
             self._stream = sys.stdout
@@ -18,6 +18,7 @@ class StreamDataLogger(DataLogger):
             p = Path(path)
             self._needs_close = True
             self._stream = p.open(mode="w", encoding="utf-8")
+        self._latest_only = latest_only
 
     def __enter__(self):
         self._init()
@@ -40,15 +41,18 @@ class StreamDataLogger(DataLogger):
         )
 
     def log(self, data: List[MeasurementData]) -> None:
-        for measurement in data:
-            self._log_measurement(measurement)
+        if self._latest_only:
+            self._log_measurement(data[-1])
+        else:
+            for measurement in data:
+                self._log_measurement(measurement)
 
 
 class CSVDataLogger(StreamDataLogger):
     FIELD_NAMES = ["timestamp", "voltage_V", "current_A", "dp_V", "dn_V", "temp_C_ema", "energy_Ws", "capacity_As"]
 
-    def __init__(self, path: Union[str, Path]):
-        super().__init__(path)
+    def __init__(self, path: Union[str, Path], latest_only: bool):
+        super().__init__(path, latest_only)
         self._writer = csv.DictWriter(self._stream, fieldnames=self.FIELD_NAMES)
 
     def _init(self) -> None:

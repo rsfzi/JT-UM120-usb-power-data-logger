@@ -88,7 +88,7 @@ class Logger:
         meter.setup_device()
         meter.initialize_communication()
         output_type = OutputType[args.type.upper()]
-        with output_type.clazz(args.output) as data_logger:
+        with output_type.clazz(args.output, args.latest_only) as data_logger:
             meter.run(data_logger)
 
     def main(self):
@@ -102,23 +102,24 @@ class Logger:
         id_parser = argparse.ArgumentParser(add_help=False)
         id_group = id_parser.add_mutually_exclusive_group(required=True)
         id_group.add_argument('--id', help="Device vendorid:productid")
-        id_group.add_argument('--serial_number', type=lambda x: int(x, 16), help="Device serial number")
+        id_group.add_argument('--serial-number', type=lambda x: int(x, 16), help="Device serial number")
 
         parser_log = subparsers.add_parser('log', parents=[id_parser], help="log power data")
-        parser_log.add_argument("--no_crc", action="store_true", help="Disable CRC checks")
+        parser_log.add_argument("--no-crc", action="store_true", help="Disable CRC checks")
         parser_log.add_argument("--alpha", type=float, default=0.9, help="Temperature EMA factor")
         parser_log.add_argument("-o", "--output", default="-", help="Output file, or '-' for stdout (default).")
         parser_log.add_argument('-t', '--type',
                             choices=[_type.type.lower() for _type in OutputType],
-                            default=OutputType.CSV.name.lower(), help="select output file type" + default)
+                            default=OutputType.CSV.name.lower(), help="Select output file type" + default)
+        parser_log.add_argument("--latest-only", action="store_true", help="Only log the latest measurement per batch")
         parser_log.set_defaults(func=self._log_data)
 
         parser_device = subparsers.add_parser('device', help="device commands")
         device_subparsers = parser_device.add_subparsers(required=True, dest="subcommand", title='subcommands',
                                                          description='valid subcommands', help='sub-command help')
-        parser_device_list = device_subparsers.add_parser('list', help="list devices")
+        parser_device_list = device_subparsers.add_parser('list', help="List devices")
         parser_device_list.set_defaults(func=self._device_list)
-        parser_device_show = device_subparsers.add_parser('show', parents=[id_parser], help="show device details")
+        parser_device_show = device_subparsers.add_parser('show', parents=[id_parser], help="Show device details")
         parser_device_show.set_defaults(func=self._device_show)
 
         args = parser.parse_args()
