@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Optional, Callable
+from typing import Optional, Callable, List
 import datetime
 
 import usb.core
@@ -109,7 +109,7 @@ class USBMeter:
             self.ep_out.write(prefix + b"\x00" * 61 + suffix)
             time.sleep(0.01)
 
-    def decode_packet(self, data: bytes, timestamp: datetime.datetime) -> Optional[MeasurementData]:
+    def decode_packet(self, data: bytes, timestamp: datetime.datetime) -> Optional[List[MeasurementData]]:
         # Data is 64 bytes (64 bytes of HID data minus vendor constant 0xaa)
         # First byte is HID vendor constant 0xaa
         # Second byte is payload type:
@@ -137,7 +137,7 @@ class USBMeter:
             measurement = self._decode_measurement(data[offset:offset + 15], measurement_time)
             measurements.append(measurement)
 
-        return measurements[-1]  # Return most recent measurement
+        return measurements
 
     def _decode_measurement(self, data: bytes, timestamp: datetime.datetime) -> MeasurementData:
         voltage = int.from_bytes(data[0:4], 'little') / 100000
@@ -182,8 +182,9 @@ class USBMeter:
         while True:
             data = self.ep_in.read(64, timeout=5000)
             now = datetime.datetime.now(datetime.timezone.utc)
-            measurement = self.decode_packet(data, now)
-            if measurement:
+            measurements = self.decode_packet(data, now)
+            if measurements:
+                measurement = measurements[-1]  # most recent measurement
                 data_logger.log(measurement)
 
             if datetime.datetime.now() >= next_refresh:
