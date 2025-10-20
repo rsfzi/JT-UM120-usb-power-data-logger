@@ -1,6 +1,7 @@
 import logging
 import time
 from typing import Optional, Callable
+import datetime
 
 import usb.core
 import usb.util
@@ -50,7 +51,8 @@ class USBMeter:
         # Find and setup HID interface
         interface_num = self._find_hid_interface()
         if self._detach_kernel_driver(interface_num):
-            self._device.usb_device.set_configuration()
+            #self._device.usb_device.set_configuration()
+            pass
 
         # Configure device
         cfg = self._device.usb_device.get_active_configuration()
@@ -107,7 +109,7 @@ class USBMeter:
             self.ep_out.write(prefix + b"\x00" * 61 + suffix)
             time.sleep(0.01)
 
-    def decode_packet(self, data: bytes, timestamp: float) -> Optional[MeasurementData]:
+    def decode_packet(self, data: bytes, timestamp: datetime.datetime) -> Optional[MeasurementData]:
         # Data is 64 bytes (64 bytes of HID data minus vendor constant 0xaa)
         # First byte is HID vendor constant 0xaa
         # Second byte is payload type:
@@ -126,16 +128,19 @@ class USBMeter:
                 return None
 
         measurements = []
-        base_time = timestamp - 0.04  # 4 samples, 10ms each
+        sample_delta = datetime.timedelta(milliseconds=10)
+        #base_time = timestamp - 0.04  # 4 samples, 10ms each
+        base_time = timestamp - 4 * sample_delta    # 4 samples, 10ms each
 
         for i in range(4):
             offset = 2 + 15 * i
-            measurement = self._decode_measurement(data[offset:offset + 15], base_time + i * 0.01)
+            measurement_time = base_time + i * sample_delta
+            measurement = self._decode_measurement(data[offset:offset + 15], measurement_time)
             measurements.append(measurement)
 
         return measurements[-1]  # Return most recent measurement
 
-    def _decode_measurement(self, data: bytes, timestamp: float) -> MeasurementData:
+    def _decode_measurement(self, data: bytes, timestamp: datetime.datetime) -> MeasurementData:
         voltage = int.from_bytes(data[0:4], 'little') / 100000
         current = int.from_bytes(data[4:8], 'little') / 100000
         dp = int.from_bytes(data[8:10], 'little') / 1000
@@ -177,7 +182,8 @@ class USBMeter:
         next_refresh = time.time() + self._device.device_info.refresh_rate
         while True:
             data = self.ep_in.read(64, timeout=5000)
-            measurement = self.decode_packet(data, time.time())
+            now = datetime.datetime.now(datetime.timezone.utc)
+            measurement = self.decode_packet(data, now)
             if measurement:
                 data_logger.log(measurement)
 

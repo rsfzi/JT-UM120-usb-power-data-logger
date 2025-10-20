@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import datetime
 
 from logger.device import Device
 
@@ -6,7 +7,7 @@ from logger.device import Device
 @dataclass
 class MeasurementData:
     device: Device
-    timestamp: float
+    timestamp: datetime.datetime
     voltage: float
     current: float
     dp: float

@@ -33,7 +33,7 @@ class StreamDataLogger(DataLogger):
 
     def log(self, data: MeasurementData) -> None:
         self._stream.write(
-            f"{data.timestamp:.3f} {data.voltage:7.5f} "
+            f"{data.timestamp.isoformat(timespec="milliseconds")} {data.voltage:7.5f} "
             f"{data.current:7.5f} {data.dp:5.3f} "
             f"{data.dn:5.3f} {data.temperature:6.3f} "
             f"{data.energy:.6f} {data.capacity:.6f}"
@@ -53,7 +53,7 @@ class CSVDataLogger(StreamDataLogger):
 
     def log(self, data: MeasurementData) -> None:
         entry = {
-            "timestamp": f"{data.timestamp:.3f}",
+            "timestamp": f"{data.timestamp.isoformat(timespec="milliseconds")}",
             "voltage_V": f"{data.voltage:7.5f}",
             "current_A": f"{data.current:7.5f}",
             "dp_V": f"{data.dp:5.3f}",
