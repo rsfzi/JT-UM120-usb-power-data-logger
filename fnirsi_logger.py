@@ -4,12 +4,14 @@ import logging.config
 import sys
 import argparse
 from pathlib import Path
+import datetime
 
 from ruamel.yaml import YAML
 
 from logger.usb_meter import USBMeter
 from logger.device import get_devices, devices_by_vid_pid, devices_by_serial_number
 from file_stop_provider import FileStopProvider
+from time_stop_provider import TimeStopProvider
 from file_data_logger import OutputType
 
 
@@ -83,7 +85,10 @@ class Logger:
 
     def _log_data(self, args):
         device = self._find_device(args)
-        stop_provider = FileStopProvider()
+        if args.duration:
+            stop_provider = TimeStopProvider(datetime.timedelta(seconds=args.duration))
+        else:
+            stop_provider = FileStopProvider()
         meter = USBMeter(device=device, stop_provider=stop_provider, crc=not args.no_crc, alpha=args.alpha)
         meter.setup_device()
         meter.initialize_communication()
@@ -112,6 +117,7 @@ class Logger:
                             choices=[_type.type.lower() for _type in OutputType],
                             default=OutputType.CSV.name.lower(), help="Select output file type" + default)
         parser_log.add_argument("--latest-only", action="store_true", help="Only log the latest measurement per batch")
+        parser_log.add_argument("--duration", type=int, default=10, help="Log duration in s (0 for infinite)" + default)
         parser_log.set_defaults(func=self._log_data)
 
         parser_device = subparsers.add_parser('device', help="device commands")
