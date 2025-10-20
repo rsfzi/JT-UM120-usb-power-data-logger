@@ -49,18 +49,24 @@ class StreamDataLogger(DataLogger):
 
 
 class CSVDataLogger(StreamDataLogger):
-    FIELD_NAMES = ["timestamp", "voltage_V", "current_A", "dp_V", "dn_V", "temp_C_ema", "energy_Ws", "capacity_As"]
+    FIELD_NAMES = ["timestamp", "rel time", "voltage_V", "current_A", "dp_V", "dn_V", "temp_C_ema", "energy_Ws", "capacity_As"]
 
     def __init__(self, path: Union[str, Path], latest_only: bool):
         super().__init__(path, latest_only)
         self._writer = csv.DictWriter(self._stream, fieldnames=self.FIELD_NAMES)
+        self._start_time = None
 
     def _init(self) -> None:
         self._writer.writeheader()
 
     def _log_measurement(self, data: MeasurementData) -> None:
+        if self._start_time is None:
+            self._start_time = data.timestamp
+        rel_time = data.timestamp - self._start_time
+
         entry = {
             "timestamp": f"{data.timestamp.isoformat(timespec="milliseconds")}",
+            "rel time": f"{rel_time.total_seconds():7.2f}",
             "voltage_V": f"{data.voltage:7.5f}",
             "current_A": f"{data.current:7.5f}",
             "dp_V": f"{data.dp:5.3f}",
