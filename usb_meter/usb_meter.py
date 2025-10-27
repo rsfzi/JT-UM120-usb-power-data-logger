@@ -46,8 +46,6 @@ class USBMeter:
     def setup_device(self) -> None:
         self._device.usb_device.reset()
 
-        self._print_device_info()
-
         # Find and setup HID interface
         interface_num = self._find_hid_interface()
         if self._detach_kernel_driver(interface_num):
@@ -85,7 +83,7 @@ class USBMeter:
             usb.util.endpoint_direction(e.bEndpointAddress) == direction
         )
 
-    def _print_device_info(self) -> None:
+    def print_device_info(self) -> None:
         self._logger.debug(f"Device configuration {self._device.device_info.vid:x}:{self._device.device_info.pid:x}:")
         for cfg in self._device.usb_device:
             self._logger.debug(f"Config {cfg.bConfigurationValue}")
