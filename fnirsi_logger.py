@@ -9,8 +9,8 @@ import datetime
 from ruamel.yaml import YAML
 from timelength import TimeLength, English, FailureFlags, ParserSettings
 
-from logger.usb_meter import USBMeter
-from logger.device import get_devices, devices_by_vid_pid, devices_by_serial_number
+from usb_meter.usb_meter import USBMeter
+from usb_meter.device import get_devices, devices_by_vid_pid, devices_by_serial_number
 from stop_providers import FileStopProvider, TimeStopProvider
 from file_data_logger import OutputType
 

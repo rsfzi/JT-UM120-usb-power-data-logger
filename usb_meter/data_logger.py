@@ -1,4 +1,4 @@
-from logger.measurement import MeasurementData
+from usb_meter.measurement import MeasurementData
 from typing import List
 
 

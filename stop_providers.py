@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 import datetime
 
-from logger.stop_provider import StopProvider
+from usb_meter.stop_provider import StopProvider
 
 
 class FileStopProvider(StopProvider):

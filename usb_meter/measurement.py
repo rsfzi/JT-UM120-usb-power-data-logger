@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import datetime
 
-from logger.device import Device
+from usb_meter.device import Device
 
 
 @dataclass
