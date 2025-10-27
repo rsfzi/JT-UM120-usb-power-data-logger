@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from usb_meter.data_logger import DataLogger
-from usb_meter.measurement import MeasurementData
+from usb_meter.measurement import ElectricalMeasurement
 
 
 class StreamDataLogger(DataLogger):
@@ -31,7 +31,7 @@ class StreamDataLogger(DataLogger):
     def _init(self) -> None:
         self._stream.write("timestamp voltage_V current_A dp_V dn_V temp_C_ema energy_Ws capacity_As\n")
 
-    def _log_measurement(self, data: MeasurementData) -> None:
+    def _log_measurement(self, data: ElectricalMeasurement) -> None:
         self._stream.write(
             f"{data.timestamp.isoformat(timespec="milliseconds")} {data.voltage:7.5f} "
             f"{data.current:7.5f} {data.dp:5.3f} "
@@ -40,7 +40,7 @@ class StreamDataLogger(DataLogger):
             "\n"
         )
 
-    def log(self, data: List[MeasurementData]) -> None:
+    def log(self, data: List[ElectricalMeasurement]) -> None:
         if self._latest_only:
             self._log_measurement(data[-1])
         else:
@@ -59,7 +59,7 @@ class CSVDataLogger(StreamDataLogger):
     def _init(self) -> None:
         self._writer.writeheader()
 
-    def _log_measurement(self, data: MeasurementData) -> None:
+    def _log_measurement(self, data: ElectricalMeasurement) -> None:
         if self._start_time is None:
             self._start_time = data.timestamp
         rel_time = data.timestamp - self._start_time

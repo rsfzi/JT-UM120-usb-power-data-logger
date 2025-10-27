@@ -5,7 +5,7 @@ from usb_meter.device import Device
 
 
 @dataclass
-class MeasurementData:
+class ElectricalMeasurement:
     device: Device
     timestamp: datetime.datetime
     voltage: float

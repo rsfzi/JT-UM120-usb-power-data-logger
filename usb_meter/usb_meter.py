@@ -7,7 +7,7 @@ import usb.core
 import usb.util
 
 from usb_meter.device import Device, DeviceModel
-from usb_meter.measurement import MeasurementData
+from usb_meter.measurement import ElectricalMeasurement
 from usb_meter.stop_provider import StopProvider
 
 
@@ -109,7 +109,7 @@ class USBMeter:
             self.ep_out.write(prefix + b"\x00" * 61 + suffix)
             time.sleep(0.01)
 
-    def decode_packet(self, data: bytes, timestamp: datetime.datetime) -> List[MeasurementData]:
+    def decode_packet(self, data: bytes, timestamp: datetime.datetime) -> List[ElectricalMeasurement]:
         # Data is 64 bytes (64 bytes of HID data minus vendor constant 0xaa)
         # First byte is HID vendor constant 0xaa
         # Second byte is payload type:
@@ -139,7 +139,7 @@ class USBMeter:
 
         return measurements
 
-    def _decode_measurement(self, data: bytes, timestamp: datetime.datetime) -> MeasurementData:
+    def _decode_measurement(self, data: bytes, timestamp: datetime.datetime) -> ElectricalMeasurement:
         voltage = int.from_bytes(data[0:4], 'little') / 100000
         current = int.from_bytes(data[4:8], 'little') / 100000
         dp = int.from_bytes(data[8:10], 'little') / 1000
@@ -157,7 +157,7 @@ class USBMeter:
         else:
             self.temp_ema = temp_C * (1.0 - self.alpha) + self.temp_ema * self.alpha
 
-        return MeasurementData(
+        return ElectricalMeasurement(
             device=self._device,
             timestamp=timestamp,
             voltage=voltage,
