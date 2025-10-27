@@ -63,7 +63,7 @@ _DEVICE_MAP = {
 }
 
 
-def get_devices():
+def all_devices():
     for (vid, pid), info in _DEVICE_MAP.items():
         devices = usb.core.find(find_all=True, idVendor=vid, idProduct=pid)
         for device in devices:

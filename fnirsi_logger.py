@@ -10,7 +10,7 @@ from ruamel.yaml import YAML
 from timelength import TimeLength, English, FailureFlags, ParserSettings
 
 from usb_meter.usb_meter import USBMeter
-from usb_meter.device import get_devices, devices_by_vid_pid, devices_by_serial_number
+from usb_meter.device import all_devices, devices_by_vid_pid, devices_by_serial_number
 from stop_providers import FileStopProvider, TimeStopProvider
 from file_data_logger import OutputType
 
@@ -50,7 +50,7 @@ class Logger:
             logging.config.dictConfig(yaml_config)
 
     def _device_list(self, args):
-        devices = get_devices()
+        devices = all_devices()
         self._logger.info("Available devices:")
         for device in devices:
             sn = device.serial_number
