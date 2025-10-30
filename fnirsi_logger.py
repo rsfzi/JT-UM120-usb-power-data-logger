@@ -99,7 +99,7 @@ class Logger:
             stop_provider = TimeStopProvider(datetime.timedelta(seconds=args.duration.result.seconds))
         else:
             stop_provider = FileStopProvider()
-        meter = USBMeter(device=device, stop_provider=stop_provider, crc=not args.no_crc, alpha=args.alpha)
+        meter = USBMeter(device=device, stop_provider=stop_provider, use_crc=not args.no_crc, alpha=args.alpha)
         meter.setup_device()
         meter.print_device_info()
         meter.initialize_communication()

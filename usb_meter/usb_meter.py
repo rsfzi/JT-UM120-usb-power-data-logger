@@ -13,14 +13,14 @@ from .stop_provider import StopProvider
 
 
 class USBMeter:
-    def __init__(self, device: Device, stop_provider: StopProvider, crc: bool = False, alpha: float = 0.9):
+    def __init__(self, device: Device, stop_provider: StopProvider, use_crc: bool = False, alpha: float = 0.9):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.use_crc = crc
         self.alpha = alpha
         self.energy = 0.0
         self.capacity = 0.0
         self.temp_ema = None
-        self.crc_calculator = self._setup_crc() if crc else None
+        self.crc_calculator = self._setup_crc() if use_crc else None
         self._device = device
         self._stop_provider = stop_provider
         self.ep_in = None

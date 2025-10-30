@@ -65,7 +65,7 @@ _DEVICE_MAP = {
 }
 
 
-def all_devices() -> Generator[Device]:
+def all_devices() -> Generator[Device, None, None]:
     for (vid, pid), info in _DEVICE_MAP.items():
         devices = usb.core.find(find_all=True, idVendor=vid, idProduct=pid)
         for device in devices:
@@ -80,14 +80,14 @@ def _find_device_info(usb_device) -> Union[DeviceInfo, None]:
     return None
 
 
-def devices_by_vid_pid(vid: int, pid: int) -> Generator[Device]:
+def devices_by_vid_pid(vid: int, pid: int) -> Generator[Device, None, None]:
     for usb_device in usb.core.find(find_all=True, idVendor=vid, idProduct=pid):
         device_info = _find_device_info(usb_device)
         if device_info:
             yield Device(device_info, usb_device)
 
 
-def devices_by_serial_number(serial_number: Union[int, str]) -> Generator[Device]:
+def devices_by_serial_number(serial_number: Union[int, str]) -> Generator[Device, None, None]:
     if isinstance(serial_number, str):
         serial_number_int = int(serial_number, 16)
     else:
