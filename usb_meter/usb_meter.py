@@ -13,6 +13,7 @@ from .stop_provider import StopProvider
 
 
 class USBMeter:
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, device: Device, stop_provider: StopProvider, use_crc: bool = False, alpha: float = 0.9):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.alpha = alpha

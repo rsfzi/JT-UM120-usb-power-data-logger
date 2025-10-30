@@ -3,6 +3,8 @@ import datetime
 
 from .device import Device
 
+# pylint: disable=too-many-instance-attributes
+
 
 @dataclass
 class ElectricalMeasurement:
