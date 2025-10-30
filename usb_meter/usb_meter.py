@@ -80,13 +80,13 @@ class USBMeter:
         )
 
     def print_device_info(self) -> None:
-        self._logger.debug(f"Device configuration {self._device.device_info.vid:x}:{self._device.device_info.pid:x}:")
+        self._logger.debug("Device configuration %x:%x", self._device.device_info.vid, self._device.device_info.pid)
         for cfg in self._device.usb_device:
-            self._logger.debug(f"Config {cfg.bConfigurationValue}")
+            self._logger.debug("Config %s", cfg.bConfigurationValue)
             for interface in cfg:
-                self._logger.debug(f"  Interface {interface.bInterfaceNumber}")
+                self._logger.debug("  Interface %s", interface.bInterfaceNumber)
                 for ep in interface:
-                    self._logger.debug(f"    Endpoint {ep.bEndpointAddress:02x}")
+                    self._logger.debug("    Endpoint %02x", ep.bEndpointAddress)
 
     def initialize_communication(self) -> None:
         init_sequence = [
@@ -167,7 +167,7 @@ class USBMeter:
         actual = data[-1]
         expected = self.crc_calculator(bytearray(data[1:-1]))
         if actual != expected:
-            self._logger.warning(f"CRC mismatch: expected {expected:02x}, got {actual:02x}")
+            self._logger.warning("CRC mismatch: expected %02x, got %02x", expected, actual)
             return False
         return True
 
@@ -188,7 +188,7 @@ class USBMeter:
                 break
 
     def run(self, data_logger) -> None:
-        self._logger.debug("log with CRC: %s" % self.use_crc)
+        self._logger.debug("log with CRC: %s", self.use_crc)
         try:
             self._do_log(data_logger)
         except KeyboardInterrupt:
@@ -202,6 +202,6 @@ class USBMeter:
             while True:
                 data = self.ep_in.read(64, timeout=1000)
                 if data:
-                    self._logger.debug(f"Drained {len(data)} bytes")
+                    self._logger.debug("Drained %d bytes", len(data))
         except usb.core.USBTimeoutError:
             self._logger.debug("Buffer drain complete")
