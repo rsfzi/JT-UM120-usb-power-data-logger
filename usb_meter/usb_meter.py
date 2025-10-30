@@ -67,7 +67,7 @@ class USBMeter:
             try:
                 self._device.usb_device.detach_kernel_driver(interface_num)
             except usb.core.USBError as e:
-                raise RuntimeError(f"Could not detach kernel driver: {e}")
+                raise RuntimeError("Could not detach kernel driver") from e
             return True
         return False
 
