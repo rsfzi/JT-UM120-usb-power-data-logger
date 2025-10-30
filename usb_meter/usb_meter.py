@@ -138,7 +138,7 @@ class USBMeter:
         current = int.from_bytes(data[4:8], 'little') / 100000
         dp = int.from_bytes(data[8:10], 'little') / 1000
         dn = int.from_bytes(data[10:12], 'little') / 1000
-        temp_C = int.from_bytes(data[13:15], 'little') / 10.0
+        temp_celsius = int.from_bytes(data[13:15], 'little') / 10.0
 
         # Update running totals
         power = voltage * current
@@ -147,9 +147,9 @@ class USBMeter:
 
         # Update EMA temperature
         if self.temp_ema is None:
-            self.temp_ema = temp_C
+            self.temp_ema = temp_celsius
         else:
-            self.temp_ema = temp_C * (1.0 - self.alpha) + self.temp_ema * self.alpha
+            self.temp_ema = temp_celsius * (1.0 - self.alpha) + self.temp_ema * self.alpha
 
         return ElectricalMeasurement(
             device=self._device,
