@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 import datetime
+from typing import Union
 
 import usb.core
 
@@ -70,11 +71,13 @@ def all_devices():
             yield Device(info, device)
 
 
-def _find_device_info(usb_device) -> DeviceInfo:
+def _find_device_info(usb_device) -> Union[DeviceInfo, None]:
     for (vid, pid), info in _DEVICE_MAP.items():
         if usb_device.idVendor == vid:
             if usb_device.idProduct == pid:
                 return info
+    return None
+
 
 def devices_by_vid_pid(vid, pid):
     for usb_device in usb.core.find(find_all=True, idVendor=vid, idProduct=pid):
@@ -84,12 +87,17 @@ def devices_by_vid_pid(vid, pid):
 
 
 def devices_by_serial_number(serial_number):
+    if isinstance(serial_number, str):
+        serial_number_int = int(serial_number, 16)
+    else:
+        serial_number_int = serial_number
+
     def has_serial_number(dev):
         try:
             sn_str = usb.util.get_string(dev, dev.iSerialNumber)
             if sn_str:
                 sn = int(sn_str, 16)
-                if serial_number == sn:
+                if serial_number_int == sn:
                     return True
         except ValueError:
             pass
