@@ -15,18 +15,17 @@ from .stop_provider import StopProvider
 class USBMeter:
     def __init__(self, device: Device, stop_provider: StopProvider, use_crc: bool = False, alpha: float = 0.9):
         self._logger = logging.getLogger(self.__class__.__name__)
-        self.use_crc = crc
         self.alpha = alpha
         self.energy = 0.0
         self.capacity = 0.0
         self.temp_ema = None
-        self.crc_calculator = self._setup_crc() if use_crc else None
+        self.crc_calculator: Optional[Callable] = self._setup_crc() if use_crc else None
         self._device = device
         self._stop_provider = stop_provider
         self.ep_in = None
         self.ep_out = None
 
-    def _setup_crc(self) -> Optional[Callable]:
+    def _setup_crc(self) -> Callable:
         width = 8
         poly = 0x39
         init_value = 0x42
@@ -117,7 +116,7 @@ class USBMeter:
         if data[1] != 0x04:  # Not a data packet
             return []
 
-        if self.use_crc and self.crc_calculator:
+        if self.crc_calculator:
             if not self._verify_crc(data):
                 return []
 
@@ -165,7 +164,7 @@ class USBMeter:
 
     def _verify_crc(self, data: bytes) -> bool:
         actual = data[-1]
-        expected = self.crc_calculator(bytearray(data[1:-1]))
+        expected = self.crc_calculator(bytearray(data[1:-1]))  # pylint: disable=not-callable
         if actual != expected:
             self._logger.warning("CRC mismatch: expected %02x, got %02x", expected, actual)
             return False
@@ -188,7 +187,8 @@ class USBMeter:
                 break
 
     def run(self, data_logger) -> None:
-        self._logger.debug("log with CRC: %s", self.use_crc)
+        use_crc = self.crc_calculator is not None
+        self._logger.debug("log with CRC: %s", use_crc)
         try:
             self._do_log(data_logger)
         except KeyboardInterrupt:
