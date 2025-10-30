@@ -1,5 +1,6 @@
-from .measurement import ElectricalMeasurement
 from typing import List
+
+from .measurement import ElectricalMeasurement
 
 
 class DataLogger:
