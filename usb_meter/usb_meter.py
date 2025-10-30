@@ -6,9 +6,9 @@ import datetime
 import usb.core
 import usb.util
 
-from usb_meter.device import Device, DeviceModel
-from usb_meter.measurement import ElectricalMeasurement
-from usb_meter.stop_provider import StopProvider
+from .device import Device, DeviceModel
+from .measurement import ElectricalMeasurement
+from .stop_provider import StopProvider
 
 
 class USBMeter:

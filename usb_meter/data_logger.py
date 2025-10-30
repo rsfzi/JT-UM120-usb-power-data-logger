@@ -1,4 +1,4 @@
-from usb_meter.measurement import ElectricalMeasurement
+from .measurement import ElectricalMeasurement
 from typing import List
 
 
