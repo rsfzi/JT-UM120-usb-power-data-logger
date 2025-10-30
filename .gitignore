@@ -130,3 +130,6 @@ dmypy.json
 
 # IntelliJ-based
 .idea/
+
+*.csv
+*.json
