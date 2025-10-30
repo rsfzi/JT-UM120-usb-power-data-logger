@@ -3,6 +3,7 @@ import time
 from typing import Optional, Callable, List
 import datetime
 
+import crc
 import usb.core
 import usb.util
 
@@ -26,22 +27,17 @@ class USBMeter:
         self.ep_out = None
 
     def _setup_crc(self) -> Optional[Callable]:
-        try:
-            import crc
-            width = 8
-            poly = 0x39
-            init_value = 0x42
-            final_xor_value = 0x00
-            config = crc.Configuration(
-                width, poly, init_value, final_xor_value,
-                reverse_input=False, reverse_output=False
-            )
-            if hasattr(crc, "CrcCalculator"):
-                return crc.CrcCalculator(config, use_table=True).calculate_checksum
-            return crc.Calculator(config, optimized=True).checksum
-        except ImportError:
-            self._logger.warning("CRC package not found, disabling CRC checks")
-            return None
+        width = 8
+        poly = 0x39
+        init_value = 0x42
+        final_xor_value = 0x00
+        config = crc.Configuration(
+            width, poly, init_value, final_xor_value,
+            reverse_input=False, reverse_output=False
+        )
+        if hasattr(crc, "CrcCalculator"):
+            return crc.CrcCalculator(config, use_table=True).calculate_checksum
+        return crc.Calculator(config, optimized=True).checksum
 
     def setup_device(self) -> None:
         self._device.usb_device.reset()
