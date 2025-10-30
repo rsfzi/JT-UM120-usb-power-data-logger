@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 import datetime
 from typing import Union
+from typing import Generator
 
 import usb.core
 
@@ -64,7 +65,7 @@ _DEVICE_MAP = {
 }
 
 
-def all_devices():
+def all_devices() -> Generator[Device]:
     for (vid, pid), info in _DEVICE_MAP.items():
         devices = usb.core.find(find_all=True, idVendor=vid, idProduct=pid)
         for device in devices:
@@ -79,14 +80,14 @@ def _find_device_info(usb_device) -> Union[DeviceInfo, None]:
     return None
 
 
-def devices_by_vid_pid(vid, pid):
+def devices_by_vid_pid(vid: int, pid: int) -> Generator[Device]:
     for usb_device in usb.core.find(find_all=True, idVendor=vid, idProduct=pid):
         device_info = _find_device_info(usb_device)
         if device_info:
             yield Device(device_info, usb_device)
 
 
-def devices_by_serial_number(serial_number):
+def devices_by_serial_number(serial_number: Union[int, str]) -> Generator[Device]:
     if isinstance(serial_number, str):
         serial_number_int = int(serial_number, 16)
     else:
@@ -107,4 +108,3 @@ def devices_by_serial_number(serial_number):
         device_info = _find_device_info(usb_device)
         if device_info:
             yield Device(device_info, usb_device)
-
