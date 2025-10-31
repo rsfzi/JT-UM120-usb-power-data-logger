@@ -188,8 +188,6 @@ class USBMeter:
                 break
 
     def run(self, data_logger) -> None:
-        use_crc = self.crc_calculator is not None
-        self._logger.debug("log with CRC: %s", use_crc)
         try:
             self._do_log(data_logger)
         except KeyboardInterrupt:
@@ -201,8 +199,8 @@ class USBMeter:
         self._logger.debug("Draining USB buffer...")
         try:
             while True:
-                data = self.ep_in.read(64, timeout=1000)
-                if data:
-                    self._logger.debug("Drained %d bytes", len(data))
+                self.ep_in.read(64, timeout=1000)
+                #if data:
+                #    self._logger.debug("Drained %d bytes", len(data))
         except usb.core.USBTimeoutError:
             self._logger.debug("Buffer drain complete")
