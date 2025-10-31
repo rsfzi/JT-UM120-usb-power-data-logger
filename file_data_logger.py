@@ -17,14 +17,14 @@ class StreamDataLogger(DataLogger):
         else:
             p = Path(path)
             self._needs_close = True
-            self._stream = p.open(mode="w", encoding="utf-8")
+            self._stream = p.open(mode="w", encoding="utf-8")  # pylint: disable=consider-using-with
         self._latest_only = latest_only
 
     def __enter__(self):
         self._init()
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, _type, value, traceback):
         if self._needs_close:
             self._stream.close()
 
@@ -49,7 +49,8 @@ class StreamDataLogger(DataLogger):
 
 
 class CSVDataLogger(StreamDataLogger):
-    FIELD_NAMES = ["timestamp", "rel time", "voltage_V", "current_A", "dp_V", "dn_V", "temp_C_ema", "energy_Ws", "capacity_As"]
+    FIELD_NAMES = ["timestamp", "rel time", "voltage_V", "current_A", "dp_V", "dn_V", "temp_C_ema",
+                   "energy_Ws", "capacity_As"]
 
     def __init__(self, path: Union[str, Path], latest_only: bool):
         super().__init__(path, latest_only)
