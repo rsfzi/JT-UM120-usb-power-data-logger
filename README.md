@@ -1,4 +1,5 @@
 [![Pylint](https://github.com/rsfzi/JT-UM120-usb-power-data-logger/actions/workflows/pylint.yml/badge.svg)](https://github.com/rsfzi/JT-UM120-usb-power-data-logger/actions/workflows/pylint.yml)
+
 Data logger for FNIRSI FNB48, FNIRSI C1 and FNIRSI FNB58 USB power meters
 ------------------------------------------------------------
 
