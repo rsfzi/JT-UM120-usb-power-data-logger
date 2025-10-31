@@ -104,7 +104,6 @@ class Logger:
         meter = USBMeter(device=device, stop_provider=stop_provider, use_crc=not args.no_crc, alpha=args.alpha)
         meter.setup_device()
         meter.print_device_info()
-        meter.initialize_communication()
         output_type = OutputType[args.type.upper()]
         with output_type.clazz(args.output, args.latest_only) as data_logger:
             meter.run(data_logger)

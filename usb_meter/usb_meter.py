@@ -88,7 +88,7 @@ class USBMeter:
                 for ep in interface:
                     self._logger.debug("    Endpoint %02x", ep.bEndpointAddress)
 
-    def initialize_communication(self) -> None:
+    def _initialize_communication(self) -> None:
         init_sequence = [
             (b"\xaa\x81", b"\x8e"),
             (b"\xaa\x82", b"\x96"),
@@ -175,6 +175,7 @@ class USBMeter:
         return True
 
     def _do_log(self, data_logger):
+        self._initialize_communication()
         next_refresh = datetime.datetime.now() + self._device.device_info.refresh_rate
         while True:
             data = self.ep_in.read(64, timeout=5000)
