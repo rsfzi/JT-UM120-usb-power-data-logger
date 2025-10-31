@@ -49,14 +49,16 @@ class Logger:
                 del yaml_config['handlers']['file']
             logging.config.dictConfig(yaml_config)
 
-    def _device_list(self, args):
+    def _device_list(self, _args):
         devices = all_devices()
         self._logger.info("Available devices:")
         for device in devices:
             sn = device.serial_number
             product = device.product_name
             manufacturer = device.manufacturer_name
-            self._logger.info(f"- {device.device_info.vid:x}:{device.device_info.pid:x} {manufacturer} {product} (type: {device.device_info.model.name} SN: {sn})")
+            self._logger.info("- %x:%x %s %s (type: %s) SN: %s",
+                              device.device_info.vid, device.device_info.pid, manufacturer,
+                              product, device.device_info.model.name, sn)
 
     def _get_id_description(self, args):
         if args.id:
@@ -65,8 +67,8 @@ class Logger:
             return "serial number = %X" % args.serial_number
         raise RuntimeError("unknown id kind")
 
-    def _split_id(self, id):
-        tokens = id.split(":")
+    def _split_id(self, id_str):
+        tokens = id_str.split(":")
         return int(tokens[0], 16), int(tokens[1], 16)
 
     def _devices_by_id(self, args):
@@ -88,10 +90,10 @@ class Logger:
 
     def _device_show(self, args):
         device = self._find_device(args)
-        self._logger.info(f"Vendor ID:     {device.device_info.vid:x}")
-        self._logger.info(f"Product ID:    {device.device_info.pid:x}")
-        self._logger.info(f"Type:          {device.device_info.model.name}")
-        self._logger.info(f"Serial number: {device.serial_number}")
+        self._logger.info("Vendor ID:     %x", device.device_info.vid)
+        self._logger.info("Product ID:    %x", device.device_info.pid)
+        self._logger.info("Type:          %s", device.device_info.model.name)
+        self._logger.info("Serial number: %s", device.serial_number)
 
     def _log_data(self, args):
         device = self._find_device(args)
@@ -128,7 +130,8 @@ class Logger:
                             choices=[_type.type.lower() for _type in OutputType],
                             default=OutputType.CSV.name.lower(), help="Select output file type" + default)
         parser_log.add_argument("--latest-only", action="store_true", help="Only log the latest measurement per batch")
-        parser_log.add_argument("--duration", type=time_length, default="10s", help="Log duration (0 for infinite)" + default)
+        parser_log.add_argument("--duration", type=time_length, default="10s",
+                                help="Log duration (0 for infinite)" + default)
         parser_log.set_defaults(func=self._log_data)
 
         parser_device = subparsers.add_parser('device', help="device commands")
@@ -145,8 +148,8 @@ class Logger:
         try:
             args.func(args)
             return 0
-        except Exception as e:
-            self._logger.exception(f"Error: {e}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self._logger.exception("Error: %s", e)
         return 1
 
 
