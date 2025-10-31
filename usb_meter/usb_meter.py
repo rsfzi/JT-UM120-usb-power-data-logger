@@ -103,6 +103,9 @@ class USBMeter:
             self.ep_out.write(prefix + b"\x00" * 61 + suffix)
             time.sleep(0.01)
 
+    def _request_next_measurement(self):
+        self.ep_out.write(b"\xaa\x83" + b"\x00" * 61 + b"\x9e")
+
     def decode_packet(self, data: bytes, timestamp: datetime.datetime) -> List[ElectricalMeasurement]:
         # Data is 64 bytes (64 bytes of HID data minus vendor constant 0xaa)
         # First byte is HID vendor constant 0xaa
@@ -182,7 +185,7 @@ class USBMeter:
 
             if datetime.datetime.now() >= next_refresh:
                 next_refresh = datetime.datetime.now() + self._device.device_info.refresh_rate
-                self.ep_out.write(b"\xaa\x83" + b"\x00" * 61 + b"\x9e")
+                self._request_next_measurement()
 
             if self._stop_provider.should_stop():
                 break
