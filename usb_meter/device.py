@@ -50,6 +50,7 @@ class Device:
         sn = usb.util.get_string(self._usb_device, self._usb_device.iManufacturer)
         return sn
 
+
 _DEVICE_MAP = {
     # FNB48
     # Bus 001 Device 020: ID 0483:003a STMicroelectronics FNB-48
