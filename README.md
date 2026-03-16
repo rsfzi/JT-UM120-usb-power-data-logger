@@ -18,56 +18,7 @@ Requirements
 
 Linux. (It might work on non-linux systems too, but untested)
 
-Python 3.6 or newer (tested in Python 3.9 only).
-
-Make sure to have `pyusb` Python package installed. It ia also
-recommended to install `crc` package.
-
-In Debian/Ubuntu: `sudo apt-get install python3-usb`.
-
-Alternatively `python3 -m pip install pyusb crc` should also work and
-get you latest version.
-
-
-Running
--------
-
-Just run `sudo ./fnirsi_logger.py`
-
-Data will be printed in real time to standard output. Feel free to save
-to file using standard shell file redirection or pipe to some other
-program. Program will exit if the connection is lost.
-
-Format is space separated text file.
-
-```
-
-timestamp sample_in_packet voltage_V current_A dp_V dn_V temp_C_ema energy_Ws capacity_As
-1657568326.775 0 0.00000 0.00011 1.184 1.031 30.500 0.000000 0.000001
-1657568326.785 1 0.00000 0.00000 1.184 1.033 30.500 0.000000 0.000001
-1657568326.795 2 0.00000 0.00011 1.184 1.030 30.500 0.000000 0.000002
-1657568326.805 3 0.00000 0.00000 1.184 1.031 30.500 0.000000 0.000002
-1657568326.784 0 0.00000 0.00011 1.185 1.032 30.500 0.000000 0.000003
-1657568326.794 1 0.00000 0.00000 1.184 1.029 30.500 0.000000 0.000003
-1657568326.804 2 0.00000 0.00000 1.184 1.029 30.500 0.000000 0.000003
-1657568326.814 3 0.00000 0.00000 1.188 1.042 30.500 0.000000 0.000003
-1657568326.824 0 0.00000 0.00000 1.197 1.060 30.500 0.000000 0.000003
-```
-
-
-Note: For convenience of using in gnuplot and using shell file append of
-multiple runs, programs add an empty line before emiting data. This way
-in gnuplot missing data semantic is automatically detected, resulting in
-better plots.
-
-For long data logging sessions, it is recommended to use compression, for
-example:
-
-`./fnirsi_logger.py | gzip > mydata.txt.gz`
-
-You can also use pipeing to ingest it into other systems, like
-monitoring, databases, alerting / notifications, or implement extra
-feature (multi-point calibration, cross device triggers, etc).
+Python 3.12 or newer.
 
 Running under normal user (non-root)
 ------------------------------------
@@ -128,6 +79,8 @@ FNIRSI FNB58 is also known to work, thanks to work of @didim99.
 
 FNIRSI FNB48S should also work.
 
+JT-UM120 are known to work.
+
 Make sure to have relatively recent firmware. My FNIRSI C-1 came with
 very old firmware (0.20) that did not work out of the box, but upgrading
 to the latest firmware (0.70) made everything work with exactly same
@@ -142,13 +95,6 @@ then read back on a computer as a simple storage device. A format is
 simple binary format called CFN. There is a tool at
 https://github.com/didim99/usbmeter-utils to read it and convert to CSV.
 
-Multiple devices in parallel
-----------------------------
-
-It is very easy to add, but I didn't have a use for it. Just open
-an Issue in GitHub and I will add it.
-
-
 Data analysis
 -------------
 
@@ -157,46 +103,6 @@ to file or a pipe. Import to program, spreadsheet, Python, R, Octave,
 gnuplot, export to InfluxDB, Prometheus, Kafka, MQTT. For quick and dirty
 work, one can use `awk`, `sort`, or my command-line program
 [kolumny](https://github.com/baryluk/kolumny). There are no limits.
-
-Also program is simple enough that you can modify it to directly process
-data in Python.
-
-As an example of data analysis and for convinience, in this repo you fill
-find a bundled gnuplot sciript `plot.gnuplot` . If you have gnuplot
-installed (On Debian/Ubuntu: `sudo apt install gnuplot-x11`), just run it
-with `./plot.gnuplot datafile.txt` and will output `plot.png` and
-`plot-iv.png` with essential timeseries.
-
-You can call it in 3 forms:
-
-```shell
-./plot.gnuplot                       # will read live.txt file, and produce png files
-./plot.gnuplot otherfile.txt         # will read otherfile.txt, and produce png files
-./plot.gnuplot otherfile.txt --live  # will read otherfile.txt, and redraw plot window every 10 s
-```
-
-To do live plotting, in on terminal do for example:
-
-```shell
-$ ./fnirsi_logger.py >> /tmp/fnirsi-live.txt
-```
-
-and in another do:
-
-```shell
-$ ./plot.gnuplot /tmp/fnirsi-live.txt --live
-```
-
-
-Examples:
-
-![gnuplot example with timeseries for voltage, current, power, energy, temp, etc](plot.png)
-
-![gnuplot example with voltage as function of current](plot-iv.png)
-
-Hint: The first parameter can be a file or any gnuplot filespec, for
-example a pipe for decompression: `./plot.gnuplot "<zcat mylog.txt.gz"`
-
 
 Limitation
 ----------
@@ -236,13 +142,3 @@ Firmware update still requires Windows. Running in qemu / virt-manager,
 and doing USB redirect works for this purposes. Unlikely to be
 implemented.
 
-FAQ
----
-
-Will you add ability to write to X, Y or integrate with Z? No. Just write
-adapter that read the decoded data via a pipe and writes what you need to
-the system of your choice. It is way more modular, easier to implement,
-and makes long term maintance trivial. The current `fnirsi_logger.py` has
-no dependencies and no configuration. It just works. Adding more would
-make it harder to use and maintain. (I do have adapter that writes output
-to InfluxDB, but it is not a part of this project - by design).
