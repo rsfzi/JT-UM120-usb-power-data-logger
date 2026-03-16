@@ -20,6 +20,8 @@ classifiers = [
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 
+Homepage = "https://github.com/rsfzi/JT-UM120-usb-power-data-logger"
+
 [tool.setuptools_scm]
 version_file = "src/usb_meter/_version.py"
 
