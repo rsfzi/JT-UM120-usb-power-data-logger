@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=80", "setuptools-scm>=9.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "usb_meter_rsi"
+dynamic = ["version"]
+description = "Data logger for JT-UM120, FNIRSI FNB48, FNIRSI C1 and FNIRSI FNB58 USB power meters"
+readme = "README.md"
+requires-python = ">=3.12"
+
+#[tool.setuptools.packages.find]
+#where = ["src"]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[tool.setuptools_scm]
+version_file = "src/usb_meter/_version.py"
+
