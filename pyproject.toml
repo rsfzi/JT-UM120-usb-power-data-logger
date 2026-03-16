@@ -9,12 +9,6 @@ description = "Data logger for JT-UM120, FNIRSI FNB48, FNIRSI C1 and FNIRSI FNB5
 readme = "README.md"
 requires-python = ">=3.12"
 
-[project.urls]
-Homepage = "https://github.com/rsfzi/JT-UM120-usb-power-data-logger"
-
-#[tool.setuptools.packages.find]
-#where = ["src"]
-
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -22,6 +16,13 @@ classifiers = [
 
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/rsfzi/JT-UM120-usb-power-data-logger"
+Repository = "https://github.com/rsfzi/JT-UM120-usb-power-data-logger"
+
+#[tool.setuptools.packages.find]
+#where = ["src"]
 
 [tool.setuptools_scm]
 version_file = "src/usb_meter/_version.py"
