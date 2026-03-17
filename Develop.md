@@ -6,6 +6,9 @@ Basic instructions: [https://packaging.python.org/en/latest/tutorials/packaging-
 1. python3 -m venv venv
 1. venv/bin/pip install -e .[dev]
 
+# Test
+* venv/bin/pylint src
+
 # Releasing
 1. venv/bin/python -m build
 1. venv/bin/twine upload [--repository testpypi] dist/*
