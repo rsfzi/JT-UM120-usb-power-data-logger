@@ -134,4 +134,4 @@ dmypy.json
 *.csv
 *.json
 
-src/usb_meter/_version.py
+src/usb_multimeter/_version.py
