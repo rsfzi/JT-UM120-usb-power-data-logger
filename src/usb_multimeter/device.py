@@ -52,6 +52,10 @@ class Device:
         return sn
 
     @property
+    def location(self) -> str:
+        return f"On Bus {self._usb_device.bus:03d} Address {self._usb_device.address:03d}"
+
+    @property
     def device_path(self) -> Path:
         usb_path = Path("/dev/bus/usb")
         usb_path = usb_path / ("%03d" % self.usb_device.bus)
