@@ -1,18 +1,15 @@
-#!/usr/bin/env python3
-
 import logging.config
-import sys
 import argparse
 from pathlib import Path
 import datetime
 
 from ruamel.yaml import YAML
 from timelength import TimeLength, English, FailureFlags, ParserSettings
+from usb_multimeter import USBMeter
+from usb_multimeter import all_devices, devices_by_vid_pid, devices_by_serial_number
 
-from usb_meter.usb_meter import USBMeter
-from usb_meter.device import all_devices, devices_by_vid_pid, devices_by_serial_number
-from stop_providers import FileStopProvider, TimeStopProvider
-from file_data_logger import OutputType
+from .stop_providers import FileStopProvider, TimeStopProvider
+from .file_data_logger import OutputType
 
 
 def time_length(string) -> TimeLength:
@@ -152,6 +149,6 @@ class Logger:
         return 1
 
 
-if __name__ == "__main__":
+def app():
     logger = Logger()
-    sys.exit(logger.main())
+    return logger.main()

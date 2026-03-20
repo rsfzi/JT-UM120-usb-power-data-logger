@@ -6,7 +6,7 @@ from .device import Device
 # pylint: disable=too-many-instance-attributes
 
 
-@dataclass
+@dataclass(frozen=True)
 class ElectricalMeasurement:
     device: Device
     timestamp: datetime.datetime

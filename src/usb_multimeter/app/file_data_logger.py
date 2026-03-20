@@ -5,8 +5,8 @@ import csv
 from dataclasses import dataclass
 from enum import Enum
 
-from usb_meter.data_logger import DataLogger
-from usb_meter.measurement import ElectricalMeasurement
+from usb_multimeter.data_logger import DataLogger
+from usb_multimeter.measurement import ElectricalMeasurement
 
 
 class StreamDataLogger(DataLogger):

@@ -31,6 +31,9 @@ dev = [
     "twine==6.2.0",
 ]
 
+[project.scripts]
+usb_logger = "usb_multimeter.app.cli:app"
+
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.in"] }
 optional-dependencies.test = { file = ["requirements-test.txt"] }
