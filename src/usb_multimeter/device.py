@@ -38,18 +38,18 @@ class Device:
 
     @property
     def serial_number(self) -> str:
-        sn = usb.util.get_string(self._usb_device, self._usb_device.iSerialNumber)
+        sn = self._usb_device.serial_number
         return sn
 
     @property
     def product_name(self) -> str:
-        sn = usb.util.get_string(self._usb_device, self._usb_device.iProduct)
-        return sn
+        pn = self._usb_device.product
+        return pn
 
     @property
     def manufacturer_name(self) -> str:
-        sn = usb.util.get_string(self._usb_device, self._usb_device.iManufacturer)
-        return sn
+        mn = self._usb_device.manufacturer
+        return mn
 
     @property
     def location(self) -> str:
