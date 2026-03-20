@@ -106,7 +106,7 @@ class Logger:
             meter.run(data_logger)
 
     def main(self):
-        parser = argparse.ArgumentParser(prog="um120_logger")
+        parser = argparse.ArgumentParser()
         default = ' (default: %(default)s)'
         parser.add_argument('-v', '--verbose', action='count', default=1, help="set the verbosity level" + default)
         parser.add_argument('-l', '--logFile', help="logfile name")
