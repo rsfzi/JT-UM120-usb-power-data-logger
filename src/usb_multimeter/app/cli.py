@@ -95,6 +95,7 @@ class Logger:
 
     def _device_show(self, args):
         device = self._find_device(args)
+        device.access_check()
         self._logger.info("Vendor ID:     %x", device.device_info.vid)
         self._logger.info("Product ID:    %x", device.device_info.pid)
         self._logger.info("Manufacturer:  %s", device.manufacturer_name)

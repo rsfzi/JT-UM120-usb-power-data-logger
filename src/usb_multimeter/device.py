@@ -58,18 +58,10 @@ class Device:
 
     @property
     def device_path(self) -> Path:
-        usb_path = Path("/dev/bus/usb")
-        usb_path = usb_path / ("%03d" % self.usb_device.bus)
-        usb_path = usb_path / ("%03d" % self.usb_device.address)
-        return  usb_path
+        return get_device_path(self._usb_device)
 
     def access_check(self) -> None:
-        try:
-            self._usb_device.get_active_configuration()
-        except usb.core.USBError as e:
-            if e.errno == errno.EACCES:
-                raise PermissionError("%s %s" % (self.device_path, e)) from e
-            raise e
+        check_permissions(self._usb_device)
 
 
 _DEVICE_MAP = {
@@ -85,6 +77,22 @@ _DEVICE_MAP = {
     # Bus 001 Device 003: ID 2e3c:0049 FNIRSI USB Tester
     (0x2E3C, 0x0049): DeviceInfo(0x2E3C, 0x0049, DeviceModel.FNB48S, datetime.timedelta(seconds=1)),
 }
+
+
+def check_permissions(device: usb.core.Device) -> None:
+    try:
+        device.get_active_configuration()
+    except usb.core.USBError as e:
+        if e.errno == errno.EACCES:
+            raise PermissionError("%s %s" % (get_device_path(device), e)) from e
+        raise e
+
+
+def get_device_path(device: usb.core.Device) -> Path:
+    usb_path = Path("/dev/bus/usb")
+    usb_path = usb_path / ("%03d" % device.bus)
+    usb_path = usb_path / ("%03d" % device.address)
+    return  usb_path
 
 
 def all_devices() -> Generator[Device, None, None]:
@@ -116,14 +124,12 @@ def devices_by_serial_number(serial_number: Union[int, str]) -> Generator[Device
         serial_number_int = serial_number
 
     def has_serial_number(dev):
-        try:
-            sn_str = usb.util.get_string(dev, dev.iSerialNumber)
-            if sn_str:
-                sn = int(sn_str, 16)
-                if serial_number_int == sn:
-                    return True
-        except ValueError:
-            pass
+        check_permissions(dev)
+        sn_str = usb.util.get_string(dev, dev.iSerialNumber)
+        if sn_str:
+            sn = int(sn_str, 16)
+            if serial_number_int == sn:
+                return True
         return False
 
     for usb_device in usb.core.find(find_all=True, custom_match=has_serial_number):
