@@ -23,7 +23,7 @@ class DeviceInfo:
 
 
 class Device:
-    def __init__(self, device_info: DeviceInfo, usb_device):
+    def __init__(self, device_info: DeviceInfo, usb_device: usb.core.Device):
         self._device_info = device_info
         self._usb_device = usb_device
 
@@ -32,7 +32,7 @@ class Device:
         return self._device_info
 
     @property
-    def usb_device(self):
+    def usb_device(self) -> usb.core.Device:
         return self._usb_device
 
     @property
@@ -70,6 +70,9 @@ def all_devices() -> Generator[Device, None, None]:
     for (vid, pid), info in _DEVICE_MAP.items():
         devices = usb.core.find(find_all=True, idVendor=vid, idProduct=pid)
         for device in devices:
+            full_class_name = device.__class__.__module__ + "." + device.__class__.__qualname__
+            print("found device:\n%s\n--------------\n%r" % (full_class_name, device))
+
             yield Device(info, device)
 
 
