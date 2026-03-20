@@ -78,9 +78,6 @@ def all_devices() -> Generator[Device, None, None]:
     for (vid, pid), info in _DEVICE_MAP.items():
         devices = usb.core.find(find_all=True, idVendor=vid, idProduct=pid)
         for device in devices:
-            full_class_name = device.__class__.__module__ + "." + device.__class__.__qualname__
-            print("found device:\n%s\n--------------\n%r" % (full_class_name, device))
-
             yield Device(info, device)
 
 
