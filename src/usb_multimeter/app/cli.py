@@ -50,12 +50,20 @@ class Logger:
         devices = all_devices()
         self._logger.info("Available devices:")
         for device in devices:
-            sn = device.serial_number
-            product = device.product_name
-            manufacturer = device.manufacturer_name
-            self._logger.info("- %x:%x %s %s (type: %s) SN: %s",
+            try:
+                device.access_check()
+                sn = device.serial_number
+                product = device.product_name
+                manufacturer = device.manufacturer_name
+                extra = ""
+            except PermissionError as e:
+                sn = "n/a"
+                product = "n/a"
+                manufacturer = "n/a"
+                extra = " (%s)" % e
+            self._logger.info("- %x:%x %s %s (type: %s) SN: %s %s",
                               device.device_info.vid, device.device_info.pid, manufacturer,
-                              product, device.device_info.model.name, sn)
+                              product, device.device_info.model.name, sn, extra)
 
     def _get_id_description(self, args):
         if args.id:

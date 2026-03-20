@@ -4,6 +4,7 @@ import datetime
 from typing import Union
 from typing import Generator
 from pathlib import Path
+import errno
 
 import usb.core
 
@@ -61,6 +62,14 @@ class Device:
         usb_path = usb_path / ("%03d" % self.usb_device.bus)
         usb_path = usb_path / ("%03d" % self.usb_device.address)
         return  usb_path
+
+    def access_check(self) -> None:
+        try:
+            self._usb_device.get_active_configuration()
+        except usb.core.USBError as e:
+            if e.errno == errno.EACCES:
+                raise PermissionError("%s %s" % (self.device_path, e)) from e
+            raise e
 
 
 _DEVICE_MAP = {
