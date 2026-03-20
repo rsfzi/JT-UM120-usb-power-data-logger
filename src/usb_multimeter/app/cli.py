@@ -91,6 +91,9 @@ class Logger:
         self._logger.info("Product ID:    %x", device.device_info.pid)
         self._logger.info("Type:          %s", device.device_info.model.name)
         self._logger.info("Serial number: %s", device.serial_number)
+        self._logger.info("On Bus:        %03d", device.usb_device.bus)
+        self._logger.info("At Address:    %03d", device.usb_device.address)
+        self._logger.info("Device path:   %s", device.device_path)
 
     def _log_data(self, args):
         device = self._find_device(args)

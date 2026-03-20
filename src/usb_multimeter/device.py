@@ -3,6 +3,7 @@ from enum import Enum, auto
 import datetime
 from typing import Union
 from typing import Generator
+from pathlib import Path
 
 import usb.core
 
@@ -49,6 +50,13 @@ class Device:
     def manufacturer_name(self) -> str:
         sn = usb.util.get_string(self._usb_device, self._usb_device.iManufacturer)
         return sn
+
+    @property
+    def device_path(self) -> Path:
+        usb_path = Path("/dev/bus/usb")
+        usb_path = usb_path / ("%03d" % self.usb_device.bus)
+        usb_path = usb_path / ("%03d" % self.usb_device.address)
+        return  usb_path
 
 
 _DEVICE_MAP = {
