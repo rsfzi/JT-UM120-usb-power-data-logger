@@ -23,12 +23,12 @@ class DeviceInfo:
 
 
 class Device:
-    def __init__(self, device_info, usb_device):
+    def __init__(self, device_info: DeviceInfo, usb_device):
         self._device_info = device_info
         self._usb_device = usb_device
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         return self._device_info
 
     @property
@@ -36,17 +36,17 @@ class Device:
         return self._usb_device
 
     @property
-    def serial_number(self):
+    def serial_number(self) -> str:
         sn = usb.util.get_string(self._usb_device, self._usb_device.iSerialNumber)
         return sn
 
     @property
-    def product_name(self):
+    def product_name(self) -> str:
         sn = usb.util.get_string(self._usb_device, self._usb_device.iProduct)
         return sn
 
     @property
-    def manufacturer_name(self):
+    def manufacturer_name(self) -> str:
         sn = usb.util.get_string(self._usb_device, self._usb_device.iManufacturer)
         return sn
 
