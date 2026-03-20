@@ -14,7 +14,7 @@ class DeviceModel(Enum):
     FNB48S = auto()
 
 
-@dataclass
+@dataclass(frozen=True)
 class DeviceInfo:
     vid: int
     pid: int
@@ -58,7 +58,7 @@ _DEVICE_MAP = {
     # C1
     # Bus 001 Device 029: ID 0483:003b STMicroelectronics USB Tester
     (0x0483, 0x003B): DeviceInfo(0x0483, 0x003B, DeviceModel.C1, datetime.timedelta(milliseconds=3)),
-    # FNB58
+    # FNB58, JT-UM120
     (0x2E3C, 0x5558): DeviceInfo(0x2E3C, 0x5558, DeviceModel.FNB58, datetime.timedelta(seconds=1)),
     # FNB48S
     # Bus 001 Device 003: ID 2e3c:0049 FNIRSI USB Tester
