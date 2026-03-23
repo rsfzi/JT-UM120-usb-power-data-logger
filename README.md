@@ -20,6 +20,14 @@ Linux. (It might work on non-linux systems too, but untested)
 
 Python 3.12 or newer.
 
+Installation
+------------
+
+```shell
+python3 -m venv venv
+venv/bin/pip install usb-multimeter
+```
+
 Running under normal user (non-root)
 ------------------------------------
 
@@ -37,8 +45,9 @@ sudo addgroup usbmeter
 Install udev rules:
 
 ```shell
-$ sudo install --mode=0644 --target-directory=/etc/udev/rules.d/ udev/90-usb-power-meter.rules
-$ sudo udevadm trigger
+sudo install --mode=0644 --target-directory=/etc/udev/rules.d/ venv/lib/python3.12/site-packages/usb_multimeter/udev/90-usb-power-meter.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
 ```
 
 This should make `fnirsi_logger.py` work for users of the usbmeter group.
