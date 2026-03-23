@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 import datetime
-from typing import Union
+from typing import Union, Callable
 from typing import Generator
 from pathlib import Path
 import errno
@@ -95,26 +95,30 @@ def get_device_path(device: usb.core.Device) -> Path:
     return  usb_path
 
 
+def _match_vendor_product(vendor_id: int, product_id: int) -> Callable[[usb.core.Device], bool]:
+    return lambda d: d.idProduct == product_id and d.idVendor == vendor_id
+
+
 def all_devices() -> Generator[Device, None, None]:
     for (vid, pid), info in _DEVICE_MAP.items():
-        devices = usb.core.find(find_all=True, idVendor=vid, idProduct=pid)
+        devices = usb.core.find(find_all=True, custom_match=_match_vendor_product(vid, pid))
         for device in devices:
             yield Device(info, device)
 
 
-def _find_device_info(usb_device) -> Union[DeviceInfo, None]:
-    for (vid, pid), info in _DEVICE_MAP.items():
-        if usb_device.idVendor == vid:
-            if usb_device.idProduct == pid:
-                return info
-    return None
+def _find_device_info(usb_device: usb.core.Device) -> Union[DeviceInfo, None]:
+    vid = usb_device.idVendor
+    pid = usb_device.idProduct
+    return _DEVICE_MAP.get((vid, pid))
 
 
 def devices_by_vid_pid(vid: int, pid: int) -> Generator[Device, None, None]:
-    for usb_device in usb.core.find(find_all=True, idVendor=vid, idProduct=pid):
+    def dev_filter(dev: usb.core.Device) -> bool:
+        return _find_device_info(dev) is not None and _match_vendor_product(vid, pid)
+
+    for usb_device in usb.core.find(find_all=True, custom_match=dev_filter):
         device_info = _find_device_info(usb_device)
-        if device_info:
-            yield Device(device_info, usb_device)
+        yield Device(device_info, usb_device)
 
 
 def devices_by_serial_number(serial_number: Union[int, str]) -> Generator[Device, None, None]:
@@ -123,7 +127,7 @@ def devices_by_serial_number(serial_number: Union[int, str]) -> Generator[Device
     else:
         serial_number_int = serial_number
 
-    def has_serial_number(dev):
+    def has_serial_number(dev: usb.core.Device) -> bool:
         check_permissions(dev)
         sn_str = usb.util.get_string(dev, dev.iSerialNumber)
         if sn_str:
@@ -132,7 +136,9 @@ def devices_by_serial_number(serial_number: Union[int, str]) -> Generator[Device
                 return True
         return False
 
-    for usb_device in usb.core.find(find_all=True, custom_match=has_serial_number):
+    def dev_filter(dev: usb.core.Device) -> bool:
+        return _find_device_info(dev) is not None and has_serial_number(dev)
+
+    for usb_device in usb.core.find(find_all=True, custom_match=dev_filter):
         device_info = _find_device_info(usb_device)
-        if device_info:
-            yield Device(device_info, usb_device)
+        yield Device(device_info, usb_device)
