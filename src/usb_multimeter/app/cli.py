@@ -8,11 +8,13 @@ from timelength import TimeLength, English, FailureFlags, ParserSettings
 from usb_multimeter import USBMeter
 from usb_multimeter import all_devices, devices_by_vid_pid, devices_by_serial_number
 
-from .stop_providers import FileStopProvider, TimeStopProvider
+from .stop_providers import FileStopProvider, TimeStopProvider, NeverStopProvider
 from .file_data_logger import OutputType
 
 
 def time_length(string) -> TimeLength:
+    if string.isdigit():
+        string += "s"
     flags = FailureFlags.ALL
     settings = ParserSettings(assume_scale="NEVER")
     locale = English(flags=flags, settings=settings)
@@ -109,7 +111,10 @@ class Logger:
     def _log_data(self, args):
         device = self._find_device(args)
         if args.duration:
-            stop_provider = TimeStopProvider(datetime.timedelta(seconds=args.duration.result.seconds))
+            if args.duration == 0:
+                stop_provider = NeverStopProvider()
+            else:
+                stop_provider = TimeStopProvider(datetime.timedelta(seconds=args.duration.result.seconds))
         else:
             stop_provider = FileStopProvider()
         meter = USBMeter(device=device, stop_provider=stop_provider, use_crc=not args.no_crc, alpha=args.alpha)

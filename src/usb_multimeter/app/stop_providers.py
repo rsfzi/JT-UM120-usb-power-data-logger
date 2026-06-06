@@ -30,3 +30,7 @@ class TimeStopProvider(StopProvider):
             self._logger.info("Timeout (%s) -> stopping...", self._timeout)
             return True
         return False
+
+class NeverStopProvider(StopProvider):
+    def should_stop(self) -> bool:
+        return False
