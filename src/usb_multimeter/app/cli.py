@@ -70,7 +70,7 @@ class Logger:
             return "vid:pid = %s" % args.id
         if args.serial_number:
             return "serial number = %X" % args.serial_number
-        raise RuntimeError("unknown id kind")
+        return "use first discovered"
 
     def _split_id(self, id_str):
         tokens = id_str.split(":")
@@ -86,6 +86,9 @@ class Logger:
 
     def _find_device(self, args):
         devices = self._devices_by_id(args)
+        # otherwise just use the first device we find
+        if devices is None:
+            devices = all_devices()
         device = next(devices, None)
         if not device:
             raise RuntimeError("No devices found with: %s" % self._get_id_description(args))
@@ -125,7 +128,7 @@ class Logger:
                                            description='valid subcommands', help='sub-command help')
 
         id_parser = argparse.ArgumentParser(add_help=False)
-        id_group = id_parser.add_mutually_exclusive_group(required=True)
+        id_group = id_parser.add_mutually_exclusive_group(required=False)
         id_group.add_argument('--id', help="Device vendorid:productid")
         id_group.add_argument('--serial-number', type=lambda x: int(x, 16), help="Device serial number")
 
