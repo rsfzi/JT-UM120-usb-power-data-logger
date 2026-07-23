@@ -109,7 +109,13 @@ class Logger:
             stop_provider = TimeStopProvider(datetime.timedelta(seconds=args.duration.result.seconds))
         else:
             stop_provider = FileStopProvider()
-        meter = USBMeter(device=device, stop_provider=stop_provider, use_crc=not args.no_crc, alpha=args.alpha)
+        config = USBMeter.Config(
+            device=device,
+            stop_provider=stop_provider,
+            use_crc=not args.no_crc,
+            alpha=args.alpha
+        )
+        meter = USBMeter(config)
         meter.setup_device()
         meter.print_device_info()
         output_type = OutputType[args.type.upper()]

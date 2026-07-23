@@ -2,6 +2,7 @@ import logging
 import time
 from typing import Optional, Callable, List
 import datetime
+from dataclasses import dataclass
 
 import crc
 import usb.core
@@ -13,16 +14,21 @@ from .stop_provider import StopProvider
 
 
 class USBMeter:
+    @dataclass(frozen=True)
+    class Config:
+        device: Device
+        stop_provider: StopProvider
+        use_crc: bool = False
+        alpha: float = 0.9
+
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, device: Device, stop_provider: StopProvider, use_crc: bool = False, alpha: float = 0.9):
+    def __init__(self, config: Config):
         self._logger = logging.getLogger(self.__class__.__name__)
-        self.alpha = alpha
+        self._config = config
         self.energy = 0.0
         self.capacity = 0.0
         self.temp_ema = None
-        self.crc_calculator: Optional[Callable] = self._setup_crc() if use_crc else None
-        self._device = device
-        self._stop_provider = stop_provider
+        self.crc_calculator: Optional[Callable] = self._setup_crc() if config.use_crc else None
         self.ep_in = None
         self.ep_out = None
 
@@ -40,7 +46,7 @@ class USBMeter:
         return crc.Calculator(config, optimized=True).checksum
 
     def setup_device(self) -> None:
-        self._device.usb_device.reset()
+        self._config.device.usb_device.reset()
 
         # Find and setup HID interface
         interface_num = self._find_hid_interface()
@@ -49,7 +55,7 @@ class USBMeter:
             pass
 
         # Configure device
-        cfg = self._device.usb_device.get_active_configuration()
+        cfg = self._config.device.usb_device.get_active_configuration()
         intf = cfg[(interface_num, 0)]
 
         # Get endpoints
@@ -57,16 +63,16 @@ class USBMeter:
         self.ep_in = self._find_endpoint(intf, usb.util.ENDPOINT_IN)
 
     def _find_hid_interface(self) -> int:
-        for cfg in self._device.usb_device:
+        for cfg in self._config.device.usb_device:
             for interface in cfg:
                 if interface.bInterfaceClass == 0x03:  # HID class
                     return interface.bInterfaceNumber
         raise RuntimeError("No HID interface found")
 
     def _detach_kernel_driver(self, interface_num: int) -> bool:
-        if self._device.usb_device.is_kernel_driver_active(interface_num):
+        if self._config.device.usb_device.is_kernel_driver_active(interface_num):
             try:
-                self._device.usb_device.detach_kernel_driver(interface_num)
+                self._config.device.usb_device.detach_kernel_driver(interface_num)
             except usb.core.USBError as e:
                 raise RuntimeError("Could not detach kernel driver") from e
             return True
@@ -80,8 +86,9 @@ class USBMeter:
         )
 
     def print_device_info(self) -> None:
-        self._logger.debug("Device configuration %x:%x", self._device.device_info.vid, self._device.device_info.pid)
-        for cfg in self._device.usb_device:
+        device = self._config.device
+        self._logger.debug("Device configuration %x:%x", device.device_info.vid, device.device_info.pid)
+        for cfg in self._config.device.usb_device:
             self._logger.debug("Config %s", cfg.bConfigurationValue)
             for interface in cfg:
                 self._logger.debug("  Interface %s", interface.bInterfaceNumber)
@@ -94,7 +101,7 @@ class USBMeter:
             (b"\xaa\x82", b"\x96"),
         ]
 
-        if self._device.device_info.model in (DeviceModel.FNB58, DeviceModel.FNB48S):
+        if self._config.device.device_info.model in (DeviceModel.FNB58, DeviceModel.FNB48S):
             init_sequence.append((b"\xaa\x82", b"\x96"))
         else:
             init_sequence.append((b"\xaa\x83", b"\x9e"))
@@ -152,10 +159,10 @@ class USBMeter:
         if self.temp_ema is None:
             self.temp_ema = temp_celsius
         else:
-            self.temp_ema = temp_celsius * (1.0 - self.alpha) + self.temp_ema * self.alpha
+            self.temp_ema = temp_celsius * (1.0 - self._config.alpha) + self.temp_ema * self._config.alpha
 
         return ElectricalMeasurement(
-            device=self._device,
+            device=self._config.device,
             timestamp=timestamp,
             voltage=voltage,
             current=current,
@@ -176,7 +183,7 @@ class USBMeter:
 
     def _do_log(self, data_logger):
         self._initialize_communication()
-        next_refresh = datetime.datetime.now() + self._device.device_info.refresh_rate
+        next_refresh = datetime.datetime.now() + self._config.device.device_info.refresh_rate
         while True:
             data = self.ep_in.read(64, timeout=5000)
             now = datetime.datetime.now(datetime.timezone.utc)
@@ -185,10 +192,10 @@ class USBMeter:
                 data_logger.log(measurements)
 
             if datetime.datetime.now() >= next_refresh:
-                next_refresh = datetime.datetime.now() + self._device.device_info.refresh_rate
+                next_refresh = datetime.datetime.now() + self._config.device.device_info.refresh_rate
                 self._request_next_measurement()
 
-            if self._stop_provider.should_stop():
+            if self._config.stop_provider.should_stop():
                 break
 
     def run(self, data_logger) -> None:
