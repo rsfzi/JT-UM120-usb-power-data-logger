@@ -22,16 +22,20 @@ class USBMeter:
         alpha: float = 0.9
         temp_offset: float = 0.0
 
+    @dataclass
+    class Context:
+        energy: float = 0.0
+        capacity: float = 0.0
+        temp_ema: float = None
+        ep_in: usb.core.Endpoint | None = None
+        ep_out: usb.core.Endpoint | None = None
+
     # pylint: disable=too-many-instance-attributes
     def __init__(self, config: Config):
         self._logger = logging.getLogger(self.__class__.__name__)
         self._config = config
-        self.energy = 0.0
-        self.capacity = 0.0
-        self.temp_ema = None
+        self._context = USBMeter.Context()
         self.crc_calculator: Optional[Callable] = self._setup_crc() if config.use_crc else None
-        self.ep_in = None
-        self.ep_out = None
 
     def _setup_crc(self) -> Callable:
         width = 8
@@ -60,8 +64,8 @@ class USBMeter:
         intf = cfg[(interface_num, 0)]
 
         # Get endpoints
-        self.ep_out = self._find_endpoint(intf, usb.util.ENDPOINT_OUT)
-        self.ep_in = self._find_endpoint(intf, usb.util.ENDPOINT_IN)
+        self._context.ep_out = self._find_endpoint(intf, usb.util.ENDPOINT_OUT)
+        self._context.ep_in = self._find_endpoint(intf, usb.util.ENDPOINT_IN)
 
     def _find_hid_interface(self) -> int:
         for cfg in self._config.device.usb_device:
@@ -108,11 +112,11 @@ class USBMeter:
             init_sequence.append((b"\xaa\x83", b"\x9e"))
 
         for prefix, suffix in init_sequence:
-            self.ep_out.write(prefix + b"\x00" * 61 + suffix)
+            self._context.ep_out.write(prefix + b"\x00" * 61 + suffix)
             time.sleep(0.01)
 
     def _request_next_measurement(self):
-        self.ep_out.write(b"\xaa\x83" + b"\x00" * 61 + b"\x9e")
+        self._context.ep_out.write(b"\xaa\x83" + b"\x00" * 61 + b"\x9e")
 
     def decode_packet(self, data: bytes, timestamp: datetime.datetime) -> List[ElectricalMeasurement]:
         # Data is 64 bytes (64 bytes of HID data minus vendor constant 0xaa)
@@ -153,14 +157,14 @@ class USBMeter:
 
         # Update running totals
         power = voltage * current
-        self.energy += power * 0.01  # 10ms interval
-        self.capacity += current * 0.01
+        self._context.energy += power * 0.01  # 10ms interval
+        self._context.capacity += current * 0.01
 
         # Update EMA temperature
-        if self.temp_ema is None:
-            self.temp_ema = temp_celsius
+        if self._context.temp_ema is None:
+            self._context.temp_ema = temp_celsius
         else:
-            self.temp_ema = temp_celsius * (1.0 - self._config.alpha) + self.temp_ema * self._config.alpha
+            self._context.temp_ema = self._calc_ema(self._context.temp_ema, temp_celsius)
 
         return ElectricalMeasurement(
             device=self._config.device,
@@ -169,10 +173,14 @@ class USBMeter:
             current=current,
             dp=dp,
             dn=dn,
-            temperature=self.temp_ema + self._config.temp_offset,
-            energy=self.energy,
-            capacity=self.capacity
+            temperature=self._context.temp_ema + self._config.temp_offset,
+            energy=self._context.energy,
+            capacity=self._context.capacity
         )
+
+    def _calc_ema(self, previous: float, current: float) -> float:
+        """Calculates the Exponential Moving Average."""
+        return self._config.alpha * previous + (1 - self._config.alpha) * current
 
     def _verify_crc(self, data: bytes) -> bool:
         actual = data[-1]
@@ -186,7 +194,7 @@ class USBMeter:
         self._initialize_communication()
         next_refresh = datetime.datetime.now() + self._config.device.device_info.refresh_rate
         while True:
-            data = self.ep_in.read(64, timeout=5000)
+            data = self._context.ep_in.read(64, timeout=5000)
             now = datetime.datetime.now(datetime.timezone.utc)
             measurements = self.decode_packet(data, now)
             if measurements:
@@ -211,7 +219,7 @@ class USBMeter:
         self._logger.debug("Draining USB buffer...")
         try:
             while True:
-                self.ep_in.read(64, timeout=1000)
+                self._context.ep_in.read(64, timeout=1000)
                 #if data:
                 #    self._logger.debug("Drained %d bytes", len(data))
         except usb.core.USBTimeoutError:
