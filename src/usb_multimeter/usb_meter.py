@@ -20,6 +20,7 @@ class USBMeter:
         stop_provider: StopProvider
         use_crc: bool = False
         alpha: float = 0.9
+        temp_offset: float = 0.0
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, config: Config):
@@ -168,7 +169,7 @@ class USBMeter:
             current=current,
             dp=dp,
             dn=dn,
-            temperature=self.temp_ema,
+            temperature=self.temp_ema + self._config.temp_offset,
             energy=self.energy,
             capacity=self.capacity
         )
