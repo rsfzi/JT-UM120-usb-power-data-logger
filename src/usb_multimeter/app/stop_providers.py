@@ -22,11 +22,17 @@ class TimeStopProvider(StopProvider):
         self._logger = logging.getLogger(self.__class__.__name__)
         self._timeout = timeout
         now = datetime.datetime.now()
-        self._end_time = now + timeout
+        self._end_time = None
 
     def should_stop(self) -> bool:
         now = datetime.datetime.now()
+        if self._end_time is None:
+            self._end_time = now + self._timeout
         if now >= self._end_time:
             self._logger.info("Timeout (%s) -> stopping...", self._timeout)
             return True
+        return False
+
+class NeverStopProvider(StopProvider):
+    def should_stop(self) -> bool:
         return False

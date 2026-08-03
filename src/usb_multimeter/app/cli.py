@@ -8,11 +8,13 @@ from timelength import TimeLength, English, FailureFlags, ParserSettings
 from usb_multimeter import USBMeter
 from usb_multimeter import all_devices, devices_by_vid_pid, devices_by_serial_number
 
-from .stop_providers import FileStopProvider, TimeStopProvider
+from .stop_providers import FileStopProvider, TimeStopProvider, NeverStopProvider
 from .file_data_logger import OutputType
 
 
 def time_length(string) -> TimeLength:
+    if string.isdigit():
+        string += "s"
     flags = FailureFlags.ALL
     settings = ParserSettings(assume_scale="NEVER")
     locale = English(flags=flags, settings=settings)
@@ -70,7 +72,7 @@ class Logger:
             return "vid:pid = %s" % args.id
         if args.serial_number:
             return "serial number = %X" % args.serial_number
-        raise RuntimeError("unknown id kind")
+        return "use first discovered"
 
     def _split_id(self, id_str):
         tokens = id_str.split(":")
@@ -86,6 +88,9 @@ class Logger:
 
     def _find_device(self, args):
         devices = self._devices_by_id(args)
+        # otherwise just use the first device we find
+        if devices is None:
+            devices = all_devices()
         device = next(devices, None)
         if not device:
             raise RuntimeError("No devices found with: %s" % self._get_id_description(args))
@@ -106,7 +111,10 @@ class Logger:
     def _log_data(self, args):
         device = self._find_device(args)
         if args.duration:
-            stop_provider = TimeStopProvider(datetime.timedelta(seconds=args.duration.result.seconds))
+            if args.duration == 0:
+                stop_provider = NeverStopProvider()
+            else:
+                stop_provider = TimeStopProvider(datetime.timedelta(seconds=args.duration.result.seconds))
         else:
             stop_provider = FileStopProvider()
         config = USBMeter.Config(
@@ -131,7 +139,7 @@ class Logger:
                                            description='valid subcommands', help='sub-command help')
 
         id_parser = argparse.ArgumentParser(add_help=False)
-        id_group = id_parser.add_mutually_exclusive_group(required=True)
+        id_group = id_parser.add_mutually_exclusive_group(required=False)
         id_group.add_argument('--id', help="Device vendorid:productid")
         id_group.add_argument('--serial-number', type=lambda x: int(x, 16), help="Device serial number")
 
